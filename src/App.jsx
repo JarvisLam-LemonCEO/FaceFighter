@@ -491,8 +491,9 @@ export default function App() {
   const [playerHit, setPlayerHit] = useState(false);
   const [roundBruises, setRoundBruises] = useState(() => generateRandomBruises());
   const [gameMode, setGameMode] = useState('classic');
-  const [timeLimit, setTimeLimit] = useState(60);
-  const [timeLeft, setTimeLeft] = useState(60);
+  const [timeLimit, setTimeLimit] = useState(10);
+  const [timeLimitInput, setTimeLimitInput] = useState('10');
+  const [timeLeft, setTimeLeft] = useState(10);
   const [timedHits, setTimedHits] = useState(0);
   const [timedVisualDamage, setTimedVisualDamage] = useState(0);
   const [roundStarted, setRoundStarted] = useState(false);
@@ -540,6 +541,14 @@ export default function App() {
 
   const startRound = useCallback(() => {
     if (!opponentImage) return;
+    const parsedLimit = Number.parseInt(timeLimitInput, 10);
+    const roundLimit = gameMode === 'timed'
+      ? clamp(Number.isFinite(parsedLimit) ? parsedLimit : timeLimit, 10, 600)
+      : timeLimit;
+    if (gameMode === 'timed') {
+      setTimeLimit(roundLimit);
+      setTimeLimitInput(String(roundLimit));
+    }
     setOpponentHp(100);
     setPlayerHp(100);
     setPunchSide(null);
@@ -550,9 +559,9 @@ export default function App() {
     setRoundBruises(generateRandomBruises());
     setTimedHits(0);
     setTimedVisualDamage(0);
-    setTimeLeft(timeLimit);
+    setTimeLeft(roundLimit);
     setRoundStarted(true);
-  }, [opponentImage, timeLimit]);
+  }, [opponentImage, timeLimit, timeLimitInput, gameMode]);
 
   const performPunch = useCallback((side) => {
     if (!opponentImage || punchSide) return;
@@ -778,15 +787,28 @@ export default function App() {
                         type="number"
                         min="10"
                         max="600"
-                        step="5"
+                        step="1"
                         inputMode="numeric"
-                        value={timeLimit}
+                        value={timeLimitInput}
                         disabled={roundStarted && !isOver}
+                        onFocus={(event) => event.currentTarget.select()}
                         onChange={(event) => {
-                          const raw = Number(event.target.value);
-                          if (!Number.isFinite(raw)) return;
-                          const next = clamp(Math.round(raw), 10, 600);
+                          const raw = event.target.value;
+                          setTimeLimitInput(raw);
+
+                          // Keep the field freely editable while the user types.
+                          // Only sync the active round setting once the draft is valid.
+                          if (raw === '') return;
+                          const parsed = Number.parseInt(raw, 10);
+                          if (!Number.isFinite(parsed) || parsed < 10 || parsed > 600) return;
+                          setTimeLimit(parsed);
+                          if (!roundStarted || isOver) setTimeLeft(parsed);
+                        }}
+                        onBlur={() => {
+                          const parsed = Number.parseInt(timeLimitInput, 10);
+                          const next = clamp(Number.isFinite(parsed) ? parsed : 10, 10, 600);
                           setTimeLimit(next);
+                          setTimeLimitInput(String(next));
                           if (!roundStarted || isOver) setTimeLeft(next);
                         }}
                         className="w-20 rounded-xl border border-black/10 bg-white px-2.5 py-2 text-right tabular-nums outline-none focus:ring-2 focus:ring-blue-500/40 disabled:opacity-50 dark:border-white/10 dark:bg-black/30"
@@ -800,7 +822,7 @@ export default function App() {
                         key={seconds}
                         type="button"
                         disabled={roundStarted && !isOver}
-                        onClick={() => { setTimeLimit(seconds); setTimeLeft(seconds); }}
+                        onClick={() => { setTimeLimit(seconds); setTimeLimitInput(String(seconds)); setTimeLeft(seconds); }}
                         className="rounded-xl border border-black/10 px-2 py-2 text-xs font-semibold transition hover:bg-black/[.04] disabled:opacity-40 dark:border-white/10 dark:hover:bg-white/[.07]"
                       >
                         {seconds < 60 ? `${seconds}s` : `${seconds / 60}m`}
