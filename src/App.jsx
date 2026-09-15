@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
+const formatTime = (seconds) => {
+  const safe = Math.max(0, Math.floor(Number.isFinite(seconds) ? seconds : 0));
+  const minutes = Math.floor(safe / 60);
+  const secs = safe % 60;
+  return `${minutes}:${String(secs).padStart(2, '0')}`;
+};
 const DEFAULT_FACE_FIT = { x: 0, y: -5, zoom: 1.08 };
 
 const BRUISE_PALETTES = [
@@ -9,7 +15,7 @@ const BRUISE_PALETTES = [
   'radial-gradient(ellipse at 54% 42%, rgba(91,24,68,.9) 0%, rgba(134,42,61,.7) 43%, rgba(190,79,54,.25) 70%, transparent 84%)',
 ];
 
-function generateRandomBruises(count = 9) {
+function generateRandomBruises(count = 12) {
   return Array.from({ length: count }, (_, index) => {
     // Keep marks inside the visible oval of the aligned face.
     const band = index % 3;
@@ -17,11 +23,11 @@ function generateRandomBruises(count = 9) {
     return {
       id: `${Date.now()}-${index}-${Math.random().toString(36).slice(2)}`,
       x: xRanges[0] + Math.random() * (xRanges[1] - xRanges[0]),
-      y: 18 + Math.random() * 60,
-      width: 15 + Math.random() * 16,
-      height: 8 + Math.random() * 13,
-      rotation: -28 + Math.random() * 56,
-      threshold: 7 + index * 8 + Math.random() * 6,
+      y: 15 + Math.random() * 66,
+      width: 13 + Math.random() * 17,
+      height: 7 + Math.random() * 13,
+      rotation: -34 + Math.random() * 68,
+      threshold: 5 + index * 6.2 + Math.random() * 5,
       strength: 0.58 + Math.random() * 0.34,
       palette: BRUISE_PALETTES[Math.floor(Math.random() * BRUISE_PALETTES.length)],
     };
@@ -359,18 +365,18 @@ function FaceDamage({ damage, bruises = [] }) {
         style={{ opacity: heavy * 0.88, transform: `scaleY(${1 + severe * 1.9})` }}
       />
 
-      {/* Cheeks / jaw */}
+      {/* Broad swelling stays anatomical; the bruise colors themselves are randomized above. */}
       <div
-        className="absolute left-[1%] top-[45%] h-[34%] w-[48%] rounded-[52%] mix-blend-multiply blur-[1.7px]"
-        style={{ opacity: early * 0.86, transform: `scale(${1 + heavy * 0.18})`, background: 'radial-gradient(circle at 58% 40%, rgba(58,18,92,.93), rgba(132,32,52,.68) 45%, rgba(176,56,47,.24) 68%, transparent 80%)' }}
+        className="absolute left-[3%] top-[48%] h-[29%] w-[43%] rounded-[52%] bg-[#7d3144]/30 blur-[5px]"
+        style={{ opacity: heavy * 0.42, transform: `scale(${1 + heavy * 0.15})` }}
       />
       <div
-        className="absolute right-[1%] top-[44%] h-[35%] w-[48%] rounded-[52%] mix-blend-multiply blur-[1.8px]"
-        style={{ opacity: heavy * 0.84, transform: `scale(${1 + severe * 0.2})`, background: 'radial-gradient(circle at 42% 43%, rgba(58,18,92,.94), rgba(133,32,52,.7) 46%, rgba(176,56,47,.24) 69%, transparent 81%)' }}
+        className="absolute right-[3%] top-[47%] h-[30%] w-[43%] rounded-[52%] bg-[#7d3144]/30 blur-[5px]"
+        style={{ opacity: severe * 0.45, transform: `scale(${1 + severe * 0.18})` }}
       />
       <div
-        className="absolute bottom-[1%] left-[18%] h-[30%] w-[65%] rounded-[52%] mix-blend-multiply blur-[2px]"
-        style={{ opacity: heavy * 0.7, background: 'radial-gradient(ellipse, rgba(109,28,50,.72), rgba(71,25,105,.48) 52%, transparent 78%)' }}
+        className="absolute bottom-[2%] left-[20%] h-[24%] w-[60%] rounded-[52%] bg-[#6d2941]/25 blur-[6px]"
+        style={{ opacity: heavy * 0.38 }}
       />
 
       {/* Nose trauma */}
@@ -484,12 +490,23 @@ export default function App() {
   const [opponentAttack, setOpponentAttack] = useState(null);
   const [playerHit, setPlayerHit] = useState(false);
   const [roundBruises, setRoundBruises] = useState(() => generateRandomBruises());
+  const [gameMode, setGameMode] = useState('classic');
+  const [timeLimit, setTimeLimit] = useState(60);
+  const [timeLeft, setTimeLeft] = useState(60);
   const [roundStarted, setRoundStarted] = useState(false);
   const [soundOn, setSoundOn] = useState(false);
   const audioRef = useRef(null);
 
-  const isOver = opponentHp <= 0 || playerHp <= 0;
-  const result = opponentHp <= 0 ? 'Opponent KO' : playerHp <= 0 ? 'You are down' : null;
+  const timedOut = gameMode === 'timed' && roundStarted && timeLeft <= 0;
+  const isOver = opponentHp <= 0 || playerHp <= 0 || timedOut;
+  const result = opponentHp <= 0 ? 'Opponent KO' : playerHp <= 0 ? 'You are down' : timedOut ? 'Time up' : null;
+  const resultDetail = opponentHp <= 0
+    ? 'You beat the opponent before the round ended.'
+    : playerHp <= 0
+      ? 'The opponent scored the KO.'
+      : timedOut
+        ? `The opponent survived with ${opponentHp} HP.`
+        : '';
 
   const playImpact = useCallback(() => {
     if (!soundOn) return;
@@ -522,8 +539,9 @@ export default function App() {
     setOpponentAttack(null);
     setPlayerHit(false);
     setRoundBruises(generateRandomBruises());
+    setTimeLeft(timeLimit);
     setRoundStarted(true);
-  }, [opponentImage]);
+  }, [opponentImage, timeLimit]);
 
   const performPunch = useCallback((side) => {
     if (!opponentImage || punchSide) return;
@@ -555,16 +573,22 @@ export default function App() {
     setIncomingDamageText(null);
     setOpponentAttack(null);
     setPlayerHit(false);
+    setTimeLeft(timeLimit);
     setRoundStarted(false);
-  }, []);
+  }, [timeLimit]);
 
   const status = useMemo(() => {
     if (!opponentImage) return 'Upload a face, adjust the fit, then press A / D or Enter.';
-    if (!roundStarted) return 'Ready. Press A / D, ← / →, Enter, or Space to start.';
+    if (!roundStarted) return gameMode === 'timed'
+      ? `Time Limit ready: ${formatTime(timeLimit)}. Press a fight key to start.`
+      : 'Classic mode ready. Press A / D, ← / →, Enter, or Space to start.';
     if (opponentHp <= 0) return 'KO. Press any fight key to rematch instantly.';
     if (playerHp <= 0) return 'You are down. Press any fight key to rematch instantly.';
-    return 'Fight: A / D or ← / →. The opponent will punch back.';
-  }, [opponentImage, roundStarted, opponentHp, playerHp]);
+    if (timedOut) return 'Time up. Press any fight key to try again.';
+    return gameMode === 'timed'
+      ? `${formatTime(timeLeft)} remaining · KO the opponent before time expires.`
+      : 'Fight: A / D or ← / →. The opponent will punch back.';
+  }, [opponentImage, roundStarted, opponentHp, playerHp, gameMode, timeLimit, timeLeft, timedOut]);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark);
@@ -591,6 +615,14 @@ export default function App() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [faceEditorOpen, requestPunch, opponentImage, roundStarted, isOver, startRound]);
+
+  useEffect(() => {
+    if (gameMode !== 'timed' || !roundStarted || isOver) return undefined;
+    const timer = window.setInterval(() => {
+      setTimeLeft((seconds) => Math.max(0, seconds - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [gameMode, roundStarted, isOver]);
 
   useEffect(() => {
     if (!roundStarted || isOver) return undefined;
@@ -677,9 +709,73 @@ export default function App() {
               <HealthBar label="Opponent" value={opponentHp} />
             </div>
 
-            <div className="mt-6 rounded-2xl border border-black/5 bg-black/[.03] p-4 dark:border-white/10 dark:bg-white/[.06]">
+            <div className="mt-6 rounded-[22px] border border-black/5 bg-black/[.03] p-3 dark:border-white/10 dark:bg-white/[.06]">
+              <div className="text-xs font-bold uppercase tracking-[.16em] text-zinc-500 dark:text-zinc-400">Game mode</div>
+              <div className="mt-3 grid grid-cols-2 gap-2 rounded-2xl bg-black/[.05] p-1 dark:bg-white/[.07]">
+                <button
+                  type="button"
+                  onClick={() => { setGameMode('classic'); resetToReady(); }}
+                  disabled={roundStarted && !isOver}
+                  className={`rounded-xl px-3 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${gameMode === 'classic' ? 'bg-white text-black shadow-sm dark:bg-white dark:text-black' : 'text-zinc-600 dark:text-zinc-300'}`}
+                >
+                  Classic
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setGameMode('timed'); resetToReady(); }}
+                  disabled={roundStarted && !isOver}
+                  className={`rounded-xl px-3 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${gameMode === 'timed' ? 'bg-white text-black shadow-sm dark:bg-white dark:text-black' : 'text-zinc-600 dark:text-zinc-300'}`}
+                >
+                  Time Limit
+                </button>
+              </div>
+
+              {gameMode === 'timed' && (
+                <div className="mt-3">
+                  <label className="flex items-center justify-between gap-3 text-sm font-semibold">
+                    Round time
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="10"
+                        max="600"
+                        step="5"
+                        inputMode="numeric"
+                        value={timeLimit}
+                        disabled={roundStarted && !isOver}
+                        onChange={(event) => {
+                          const raw = Number(event.target.value);
+                          if (!Number.isFinite(raw)) return;
+                          const next = clamp(Math.round(raw), 10, 600);
+                          setTimeLimit(next);
+                          if (!roundStarted || isOver) setTimeLeft(next);
+                        }}
+                        className="w-20 rounded-xl border border-black/10 bg-white px-2.5 py-2 text-right tabular-nums outline-none focus:ring-2 focus:ring-blue-500/40 disabled:opacity-50 dark:border-white/10 dark:bg-black/30"
+                      />
+                      <span className="text-xs text-zinc-500">sec</span>
+                    </div>
+                  </label>
+                  <div className="mt-2 grid grid-cols-3 gap-2">
+                    {[30, 60, 120].map((seconds) => (
+                      <button
+                        key={seconds}
+                        type="button"
+                        disabled={roundStarted && !isOver}
+                        onClick={() => { setTimeLimit(seconds); setTimeLeft(seconds); }}
+                        className="rounded-xl border border-black/10 px-2 py-2 text-xs font-semibold transition hover:bg-black/[.04] disabled:opacity-40 dark:border-white/10 dark:hover:bg-white/[.07]"
+                      >
+                        {seconds < 60 ? `${seconds}s` : `${seconds / 60}m`}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-2 text-xs leading-5 text-zinc-500 dark:text-zinc-400">Set 10–600 seconds. Win by knocking out the opponent before the clock reaches zero.</p>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-black/5 bg-black/[.03] p-4 dark:border-white/10 dark:bg-white/[.06]">
               <div className="text-xs font-bold uppercase tracking-[.16em] text-zinc-500 dark:text-zinc-400">Controls</div>
-              <p className="mt-2 text-sm leading-6 text-zinc-700 dark:text-zinc-300">A / D or ← / → punch. Enter or Space starts a round. After a KO, press any fight key for an instant rematch.</p>
+              <p className="mt-2 text-sm leading-6 text-zinc-700 dark:text-zinc-300">A / D or ← / → punch. Enter or Space starts a round. In Time Limit mode, KO the opponent before the countdown ends. Any fight key starts an instant rematch.</p>
             </div>
 
             <div className="mt-5 flex gap-2">
@@ -690,8 +786,12 @@ export default function App() {
 
           <div className={`relative order-1 min-h-[62vh] overflow-hidden rounded-[30px] border border-black/5 bg-gradient-to-b from-sky-100 via-zinc-100 to-zinc-300 shadow-apple dark:border-white/10 dark:from-zinc-800 dark:via-zinc-900 dark:to-black lg:order-2 lg:min-h-[690px] ${playerHit ? 'player-hit-screen' : ''}`}>
             <div className="absolute inset-x-0 top-0 z-30 p-4 sm:p-5">
-              <div className="glass mx-auto grid max-w-5xl grid-cols-2 gap-5 rounded-[22px] border border-white/20 bg-white/60 p-3 shadow-lg dark:border-white/10 dark:bg-black/[.35] sm:p-4">
+              <div className="glass mx-auto grid max-w-5xl grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2 rounded-[22px] border border-white/20 bg-white/60 p-3 shadow-lg dark:border-white/10 dark:bg-black/[.35] sm:gap-5 sm:p-4">
                 <HealthBar label="Player" value={playerHp} />
+                <div className={`min-w-[58px] rounded-xl border px-2 py-1.5 text-center shadow-sm sm:min-w-[78px] sm:px-3 sm:py-2 ${gameMode === 'timed' ? 'border-blue-500/25 bg-blue-600 text-white' : 'border-black/5 bg-white/70 text-zinc-700 dark:border-white/10 dark:bg-white/10 dark:text-white'}`}>
+                  <div className="text-[8px] font-bold uppercase tracking-[.16em] opacity-75 sm:text-[9px]">{gameMode === 'timed' ? 'Time' : 'Mode'}</div>
+                  <div className="mt-0.5 text-sm font-bold tabular-nums sm:text-lg">{gameMode === 'timed' ? formatTime(timeLeft) : '∞'}</div>
+                </div>
                 <HealthBar label="Opponent" value={opponentHp} align="right" />
               </div>
             </div>
@@ -702,6 +802,7 @@ export default function App() {
               <div className="arena-spotlight arena-spotlight-right" />
               <div className="arena-scoreboard">
                 <span>FACE FIGHTER</span>
+                <span>{gameMode === 'timed' ? formatTime(timeLeft) : 'NO LIMIT'}</span>
                 <span className="scoreboard-live">LIVE</span>
               </div>
               <div className="arena-crowd">
@@ -746,6 +847,7 @@ export default function App() {
               <div className="glass pointer-events-none absolute left-1/2 top-1/2 z-[60] w-[min(88%,450px)] -translate-x-1/2 -translate-y-1/2 rounded-[28px] border border-white/20 bg-white/[.88] p-6 text-center shadow-2xl dark:border-white/10 dark:bg-zinc-950/[.88]">
                 <div className="text-xs font-bold uppercase tracking-[.24em] text-zinc-500 dark:text-zinc-400">Round complete</div>
                 <div className="mt-2 text-4xl font-bold tracking-[-.05em]">{result}</div>
+                {resultDetail && <div className="mt-2 text-sm font-medium text-zinc-700 dark:text-zinc-200">{resultDetail}</div>}
                 <div className="mt-3 text-sm text-zinc-600 dark:text-zinc-300">A / D · ← / → to rematch and punch immediately<br />Enter / Space to restart</div>
               </div>
             )}
