@@ -221,3 +221,202 @@ label {
     width: 68px;
   }
 }
+
+/* --- Professional arena presentation --- */
+.boxing-arena {
+  background:
+    radial-gradient(ellipse at 50% 16%, rgba(255,255,255,.12), transparent 30%),
+    linear-gradient(180deg, #05070b 0%, #0b1018 44%, #141923 65%, #11141b 100%);
+}
+
+.arena-ceiling {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 32%;
+  opacity: .82;
+  background:
+    linear-gradient(90deg, transparent 8%, rgba(255,255,255,.08) 8.3%, transparent 8.8%, transparent 91%, rgba(255,255,255,.07) 91.3%, transparent 91.8%),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.025) 0 1px, transparent 1px 64px),
+    linear-gradient(180deg, #020307 0%, #080b11 100%);
+  border-bottom: 1px solid rgba(255,255,255,.07);
+}
+
+.arena-spotlight {
+  position: absolute;
+  top: -16%;
+  width: 38%;
+  height: 76%;
+  filter: blur(10px);
+  opacity: .38;
+  background: linear-gradient(180deg, rgba(255,255,255,.72), rgba(224,236,255,.2) 48%, transparent 100%);
+  clip-path: polygon(43% 0, 57% 0, 100% 100%, 0 100%);
+}
+
+.arena-spotlight-left { left: -7%; transform: rotate(9deg); }
+.arena-spotlight-right { right: -7%; transform: rotate(-9deg); }
+
+.arena-scoreboard {
+  position: absolute;
+  top: 14%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 12px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 8px;
+  color: rgba(255,255,255,.74);
+  background: rgba(0,0,0,.72);
+  box-shadow: 0 8px 30px rgba(0,0,0,.45);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .22em;
+}
+
+.scoreboard-live {
+  color: #fff;
+  background: #c81e2a;
+  padding: 3px 5px 3px 7px;
+  border-radius: 4px;
+  letter-spacing: .14em;
+}
+
+.arena-crowd {
+  position: absolute;
+  left: -3%;
+  right: -3%;
+  top: 28%;
+  height: 31%;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,.1), rgba(0,0,0,.55)),
+    repeating-linear-gradient(0deg, transparent 0 20px, rgba(255,255,255,.015) 20px 21px);
+  border-top: 1px solid rgba(255,255,255,.04);
+}
+
+.arena-crowd i {
+  position: absolute;
+  border-radius: 999px 999px 3px 3px;
+  box-shadow: 0 -4px 0 -1px rgba(240,224,210,.55);
+}
+
+.ring-back-post {
+  position: absolute;
+  z-index: 4;
+  bottom: 24%;
+  width: 34px;
+  height: 43%;
+  border-radius: 6px 6px 2px 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: rgba(255,255,255,.9);
+  background: linear-gradient(90deg, #191b20, #3b3e46 45%, #0e0f12);
+  box-shadow: 0 12px 28px rgba(0,0,0,.6);
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: .12em;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+.ring-post-left { left: 7%; }
+.ring-post-right { right: 7%; }
+
+.ring-rope {
+  position: absolute;
+  z-index: 5;
+  left: 7.5%;
+  right: 7.5%;
+  height: 5px;
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, #f5f5f5 0 31%, #bd1e2c 31% 69%, #f5f5f5 69% 100%);
+  box-shadow:
+    0 2px 0 rgba(0,0,0,.45),
+    0 0 0 1px rgba(0,0,0,.18),
+    0 2px 8px rgba(0,0,0,.36);
+  transform-origin: center;
+}
+
+.ring-rope-1 { bottom: 52%; }
+.ring-rope-2 { bottom: 45.5%; }
+.ring-rope-3 { bottom: 39%; }
+.ring-rope-4 { bottom: 32.5%; }
+
+.ring-canvas {
+  position: absolute;
+  z-index: 3;
+  left: 4%;
+  right: 4%;
+  bottom: -2%;
+  height: 35%;
+  overflow: hidden;
+  clip-path: polygon(8% 0, 92% 0, 100% 100%, 0 100%);
+  background:
+    radial-gradient(circle at 50% 32%, rgba(255,255,255,.92), rgba(231,234,237,.96) 36%, rgba(195,200,205,.97) 100%);
+  border-top: 2px solid rgba(255,255,255,.9);
+  box-shadow: inset 0 9px 30px rgba(55,65,81,.16);
+}
+
+.canvas-center-mark {
+  position: absolute;
+  left: 50%;
+  top: 37%;
+  transform: translate(-50%, -50%) perspective(500px) rotateX(57deg);
+  color: rgba(25,28,34,.14);
+  font-size: clamp(64px, 10vw, 120px);
+  font-weight: 900;
+  letter-spacing: -.08em;
+}
+
+.canvas-sponsor {
+  position: absolute;
+  bottom: 18%;
+  color: rgba(32,37,45,.28);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .18em;
+}
+
+.canvas-sponsor-left { left: 15%; transform: rotate(-9deg); }
+.canvas-sponsor-right { right: 12%; transform: rotate(8deg); }
+
+.ring-apron {
+  position: absolute;
+  z-index: 6;
+  left: 3.6%;
+  right: 3.6%;
+  bottom: 0;
+  height: 6.4%;
+  display: grid;
+  place-items: center;
+  color: rgba(255,255,255,.86);
+  background: linear-gradient(180deg, #111318, #050607);
+  border-top: 1px solid rgba(255,255,255,.18);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .24em;
+}
+
+.nose-blood-stream {
+  animation: blood-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes blood-pulse {
+  0%, 100% { filter: saturate(.96); }
+  50% { filter: saturate(1.22) brightness(1.03); }
+}
+
+@media (max-width: 640px) {
+  .ring-back-post { width: 24px; bottom: 23%; height: 41%; }
+  .ring-post-left { left: 3.5%; }
+  .ring-post-right { right: 3.5%; }
+  .ring-rope { left: 4%; right: 4%; height: 4px; }
+  .arena-scoreboard { top: 16%; font-size: 7px; }
+  .ring-canvas { left: -7%; right: -7%; height: 33%; }
+  .ring-apron { left: 0; right: 0; font-size: 6.5px; }
+}

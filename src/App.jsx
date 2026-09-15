@@ -84,50 +84,64 @@ function FaceEditor({ image, fit, setFit, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[120] grid place-items-center bg-black/[.55] p-3 backdrop-blur-md sm:p-6">
-      <div className="glass w-full max-w-[760px] rounded-[30px] border border-white/20 bg-white/95 p-5 shadow-2xl dark:border-white/10 dark:bg-zinc-950/95 sm:p-7">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[.22em] text-zinc-500 dark:text-zinc-400">Face alignment</p>
-            <h2 className="mt-1 text-2xl font-semibold tracking-[-.04em]">Fit the face inside the guide</h2>
-            <p className="mt-2 max-w-xl text-sm leading-6 text-zinc-600 dark:text-zinc-300">Drag the photo to reposition it. Use zoom and position controls so the eyes and chin fit the indicator.</p>
-          </div>
-          <button onClick={onClose} className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-black/[.06] text-xl dark:bg-white/10">×</button>
-        </div>
-
-        <div className="mt-5 grid gap-5 md:grid-cols-[minmax(0,1fr)_250px]">
-          <div
-            ref={previewRef}
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={endDrag}
-            onPointerCancel={endDrag}
-            className="relative mx-auto aspect-[4/5] w-full max-w-[360px] touch-none cursor-grab overflow-hidden rounded-[28px] bg-zinc-200 shadow-inner active:cursor-grabbing dark:bg-zinc-800"
-          >
-            <FaceImage image={image} fit={fit} />
-            <div className="pointer-events-none absolute inset-[9%_13%_8%] rounded-[46%_46%_48%_48%/38%_38%_58%_58%] border-2 border-dashed border-white/90 shadow-[0_0_0_999px_rgba(0,0,0,.28)]" />
-            <div className="pointer-events-none absolute left-[26%] right-[26%] top-[39%] border-t border-white/80" />
-            <div className="pointer-events-none absolute bottom-[18%] left-1/2 top-[13%] border-l border-white/45" />
-            <div className="pointer-events-none absolute left-1/2 top-[39%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/[.55] px-2 py-1 text-[10px] font-bold uppercase tracking-[.16em] text-white">Eyes</div>
-          </div>
-
-          <div className="flex flex-col justify-between gap-5">
-            <div className="space-y-5">
-              <label className="block text-sm font-semibold">
-                Zoom <span className="float-right tabular-nums text-zinc-500">{fit.zoom.toFixed(2)}×</span>
-                <input className="mt-2 w-full accent-blue-600" type="range" min="1" max="2.1" step="0.01" value={fit.zoom} onChange={(e) => setFit((f) => ({ ...f, zoom: Number(e.target.value) }))} />
-              </label>
-              <label className="block text-sm font-semibold">
-                Horizontal <span className="float-right tabular-nums text-zinc-500">{Math.round(fit.x)}</span>
-                <input className="mt-2 w-full accent-blue-600" type="range" min="-40" max="40" step="1" value={fit.x} onChange={(e) => setFit((f) => ({ ...f, x: Number(e.target.value) }))} />
-              </label>
-              <label className="block text-sm font-semibold">
-                Vertical <span className="float-right tabular-nums text-zinc-500">{Math.round(fit.y)}</span>
-                <input className="mt-2 w-full accent-blue-600" type="range" min="-40" max="40" step="1" value={fit.y} onChange={(e) => setFit((f) => ({ ...f, y: Number(e.target.value) }))} />
-              </label>
-              <button onClick={() => setFit(DEFAULT_FACE_FIT)} className="w-full rounded-2xl border border-black/10 px-4 py-3 text-sm font-semibold hover:bg-black/[.04] dark:border-white/15 dark:hover:bg-white/10">Reset alignment</button>
+    <div
+      className="fixed inset-0 z-[120] overflow-y-auto overscroll-y-contain bg-black/[.55] backdrop-blur-md"
+      style={{ WebkitOverflowScrolling: 'touch' }}
+    >
+      <div
+        className="flex min-h-full w-full items-start justify-center px-3 sm:items-center sm:px-6"
+        style={{
+          paddingTop: 'max(12px, env(safe-area-inset-top))',
+          paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
+        }}
+      >
+        <div className="glass my-auto w-full max-w-[760px] rounded-[26px] border border-white/20 bg-white/95 p-4 shadow-2xl dark:border-white/10 dark:bg-zinc-950/95 sm:rounded-[30px] sm:p-7">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-[.22em] text-zinc-500 dark:text-zinc-400 sm:text-[11px]">Face alignment</p>
+              <h2 className="mt-1 text-xl font-semibold tracking-[-.04em] sm:text-2xl">Fit the face inside the guide</h2>
+              <p className="mt-1.5 max-w-xl text-xs leading-5 text-zinc-600 dark:text-zinc-300 sm:mt-2 sm:text-sm sm:leading-6">Drag the photo to reposition it. Use zoom and position controls so the eyes and chin fit the indicator.</p>
             </div>
-            <button onClick={onClose} className="w-full rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-500">Use this fit</button>
+            <button type="button" onClick={onClose} aria-label="Close face editor" className="grid h-10 w-10 shrink-0 touch-manipulation place-items-center rounded-full bg-black/[.06] text-xl active:scale-95 dark:bg-white/10">×</button>
+          </div>
+
+          <div className="mt-4 grid gap-4 sm:mt-5 sm:gap-5 md:grid-cols-[minmax(0,1fr)_250px]">
+            <div
+              ref={previewRef}
+              onPointerDown={onPointerDown}
+              onPointerMove={onPointerMove}
+              onPointerUp={endDrag}
+              onPointerCancel={endDrag}
+              onLostPointerCapture={endDrag}
+              className="relative mx-auto aspect-[4/5] w-[min(78vw,320px)] touch-none cursor-grab overflow-hidden rounded-[24px] bg-zinc-200 shadow-inner active:cursor-grabbing dark:bg-zinc-800 sm:w-full sm:max-w-[360px] sm:rounded-[28px]"
+            >
+              <FaceImage image={image} fit={fit} />
+              <div className="pointer-events-none absolute inset-[9%_13%_8%] rounded-[46%_46%_48%_48%/38%_38%_58%_58%] border-2 border-dashed border-white/90 shadow-[0_0_0_999px_rgba(0,0,0,.28)]" />
+              <div className="pointer-events-none absolute left-[26%] right-[26%] top-[39%] border-t border-white/80" />
+              <div className="pointer-events-none absolute bottom-[18%] left-1/2 top-[13%] border-l border-white/45" />
+              <div className="pointer-events-none absolute left-1/2 top-[39%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/[.55] px-2 py-1 text-[10px] font-bold uppercase tracking-[.16em] text-white">Eyes</div>
+            </div>
+
+            <div className="flex min-w-0 flex-col justify-between gap-4 sm:gap-5">
+              <div className="space-y-4 sm:space-y-5">
+                <label className="block text-sm font-semibold">
+                  Zoom <span className="float-right tabular-nums text-zinc-500">{fit.zoom.toFixed(2)}×</span>
+                  <input className="mt-2 h-8 w-full touch-manipulation accent-blue-600" type="range" min="1" max="2.1" step="0.01" value={fit.zoom} onChange={(e) => setFit((f) => ({ ...f, zoom: Number(e.target.value) }))} />
+                </label>
+                <label className="block text-sm font-semibold">
+                  Horizontal <span className="float-right tabular-nums text-zinc-500">{Math.round(fit.x)}</span>
+                  <input className="mt-2 h-8 w-full touch-manipulation accent-blue-600" type="range" min="-40" max="40" step="1" value={fit.x} onChange={(e) => setFit((f) => ({ ...f, x: Number(e.target.value) }))} />
+                </label>
+                <label className="block text-sm font-semibold">
+                  Vertical <span className="float-right tabular-nums text-zinc-500">{Math.round(fit.y)}</span>
+                  <input className="mt-2 h-8 w-full touch-manipulation accent-blue-600" type="range" min="-40" max="40" step="1" value={fit.y} onChange={(e) => setFit((f) => ({ ...f, y: Number(e.target.value) }))} />
+                </label>
+                <button type="button" onClick={() => setFit(DEFAULT_FACE_FIT)} className="w-full touch-manipulation rounded-2xl border border-black/10 px-4 py-3 text-sm font-semibold active:scale-[.99] hover:bg-black/[.04] dark:border-white/15 dark:hover:bg-white/10">Reset alignment</button>
+              </div>
+              <div className="sticky bottom-0 -mx-1 bg-gradient-to-t from-white via-white/95 to-transparent px-1 pb-1 pt-3 dark:from-zinc-950 dark:via-zinc-950/95 md:static md:m-0 md:bg-none md:p-0">
+                <button type="button" onClick={onClose} className="w-full touch-manipulation rounded-2xl bg-blue-600 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 active:scale-[.99] hover:bg-blue-500">Use this fit</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -135,14 +149,103 @@ function FaceEditor({ image, fit, setFit, onClose }) {
   );
 }
 
+function FaceDamage({ damage }) {
+  const early = clamp((damage - 4) / 24, 0, 1);
+  const medium = clamp((damage - 18) / 32, 0, 1);
+  const heavy = clamp((damage - 38) / 34, 0, 1);
+  const severe = clamp((damage - 62) / 28, 0, 1);
+  const noseBlood = clamp((damage - 28) / 32, 0, 1);
+  const bloodHeavy = clamp((damage - 58) / 30, 0, 1);
+
+  return (
+    <div className="pointer-events-none absolute inset-0 z-20 overflow-hidden rounded-[inherit]">
+      {/* Left eye / upper cheek */}
+      <div
+        className="absolute left-[10%] top-[27%] h-[24%] w-[38%] rounded-[48%] mix-blend-multiply blur-[1.4px]"
+        style={{
+          opacity: early * 0.92,
+          transform: `scale(${1 + heavy * 0.16}) rotate(-5deg)`,
+          background: 'radial-gradient(ellipse at 58% 43%, rgba(35,8,61,.98) 0%, rgba(76,29,149,.9) 27%, rgba(145,34,55,.68) 55%, rgba(185,56,45,.22) 72%, transparent 82%)',
+        }}
+      />
+      <div
+        className="absolute left-[12%] top-[31%] h-[10%] w-[33%] rounded-[50%] bg-[#431327] shadow-[0_8px_18px_rgba(63,8,28,.58)] blur-[1px]"
+        style={{ opacity: medium * 0.94, transform: `scaleY(${1 + medium * 2.8 + severe * 1.35}) scaleX(${1 + heavy * 0.14})` }}
+      />
+      <div
+        className="absolute left-[16%] top-[36.5%] h-[3.5%] w-[25%] rounded-full bg-black/90 blur-[.45px]"
+        style={{ opacity: heavy * 0.88, transform: `scaleY(${1 + severe * 1.9})` }}
+      />
+
+      {/* Right eye / upper cheek */}
+      <div
+        className="absolute right-[9%] top-[26%] h-[25%] w-[39%] rounded-[48%] mix-blend-multiply blur-[1.5px]"
+        style={{
+          opacity: medium * 0.96,
+          transform: `scale(${1 + heavy * 0.2}) rotate(5deg)`,
+          background: 'radial-gradient(ellipse at 42% 45%, rgba(38,7,65,.99) 0%, rgba(86,28,143,.91) 29%, rgba(147,35,57,.7) 57%, rgba(189,61,46,.22) 73%, transparent 83%)',
+        }}
+      />
+      <div
+        className="absolute right-[11%] top-[31%] h-[10%] w-[33%] rounded-[50%] bg-[#431327] shadow-[0_8px_18px_rgba(63,8,28,.58)] blur-[1px]"
+        style={{ opacity: medium * 0.94, transform: `scaleY(${1 + medium * 2.8 + severe * 1.35}) scaleX(${1 + heavy * 0.14})` }}
+      />
+      <div
+        className="absolute right-[15%] top-[36.5%] h-[3.5%] w-[25%] rounded-full bg-black/90 blur-[.45px]"
+        style={{ opacity: heavy * 0.88, transform: `scaleY(${1 + severe * 1.9})` }}
+      />
+
+      {/* Cheeks / jaw */}
+      <div
+        className="absolute left-[1%] top-[45%] h-[34%] w-[48%] rounded-[52%] mix-blend-multiply blur-[1.7px]"
+        style={{ opacity: early * 0.86, transform: `scale(${1 + heavy * 0.18})`, background: 'radial-gradient(circle at 58% 40%, rgba(58,18,92,.93), rgba(132,32,52,.68) 45%, rgba(176,56,47,.24) 68%, transparent 80%)' }}
+      />
+      <div
+        className="absolute right-[1%] top-[44%] h-[35%] w-[48%] rounded-[52%] mix-blend-multiply blur-[1.8px]"
+        style={{ opacity: heavy * 0.84, transform: `scale(${1 + severe * 0.2})`, background: 'radial-gradient(circle at 42% 43%, rgba(58,18,92,.94), rgba(133,32,52,.7) 46%, rgba(176,56,47,.24) 69%, transparent 81%)' }}
+      />
+      <div
+        className="absolute bottom-[1%] left-[18%] h-[30%] w-[65%] rounded-[52%] mix-blend-multiply blur-[2px]"
+        style={{ opacity: heavy * 0.7, background: 'radial-gradient(ellipse, rgba(109,28,50,.72), rgba(71,25,105,.48) 52%, transparent 78%)' }}
+      />
+
+      {/* Nose trauma */}
+      <div
+        className="absolute left-1/2 top-[39%] h-[29%] w-[23%] -translate-x-1/2 rounded-[48%] mix-blend-multiply blur-[1.2px]"
+        style={{ opacity: medium * 0.8, transform: `translateX(-50%) scaleX(${1 + heavy * 0.2})`, background: 'radial-gradient(ellipse at 50% 56%, rgba(92,22,57,.9), rgba(148,39,49,.58) 54%, transparent 79%)' }}
+      />
+      <div
+        className="absolute left-[42.5%] top-[58%] h-[3.2%] w-[7%] rounded-full bg-[#3a0b0e] blur-[.3px]"
+        style={{ opacity: noseBlood * 0.92 }}
+      />
+      <div
+        className="absolute right-[42.5%] top-[58%] h-[3.2%] w-[7%] rounded-full bg-[#3a0b0e] blur-[.3px]"
+        style={{ opacity: noseBlood * 0.82 }}
+      />
+      <div
+        className="nose-blood-stream absolute left-[47.8%] top-[59.5%] w-[4.6%] origin-top rounded-b-full bg-gradient-to-b from-[#7f1118] via-[#a5121d] to-[#5c0a10] shadow-[0_2px_5px_rgba(76,4,10,.45)]"
+        style={{ opacity: noseBlood, height: `${8 + noseBlood * 13 + bloodHeavy * 6}%`, transform: `rotate(${2 + bloodHeavy * 3}deg) scaleX(${0.76 + bloodHeavy * 0.35})` }}
+      />
+      <div
+        className="absolute left-[50.3%] top-[69%] h-[9%] w-[3.2%] rounded-full bg-[#8f111b] blur-[.35px]"
+        style={{ opacity: bloodHeavy * 0.9, transform: `rotate(-7deg) scaleY(${0.8 + bloodHeavy * 1.25})` }}
+      />
+      <div className="absolute left-[48.7%] top-[78%] h-[4.5%] w-[7%] rounded-full bg-[#6d0910] blur-[.45px]" style={{ opacity: bloodHeavy * 0.74 }} />
+
+      {/* Mouth / lower face */}
+      <div
+        className="absolute bottom-[12%] left-[31%] h-[10%] w-[39%] rounded-full bg-[#641324] blur-[.9px]"
+        style={{ opacity: heavy * 0.9, transform: `scaleY(${1 + heavy * 1.1 + severe * 0.75}) scaleX(${1 + severe * 0.2})` }}
+      />
+      <div className="absolute inset-0 rounded-[inherit] mix-blend-multiply" style={{ opacity: severe * 0.24, background: 'radial-gradient(circle at 50% 52%, transparent 18%, rgba(83,20,48,.62) 100%)' }} />
+      <div className="absolute inset-0 rounded-[inherit] ring-inset" style={{ boxShadow: `inset 0 0 ${18 + severe * 16}px rgba(72, 12, 31, ${severe * 0.2})` }} />
+    </div>
+  );
+}
+
 function Opponent({ image, fit, hp, hitKey, attack }) {
   const damage = 100 - hp;
-  const bruiseOpacity = clamp((damage - 2) / 38, 0, 0.98);
-  const heavyBruiseOpacity = clamp((damage - 12) / 38, 0, 1);
-  const eyeSwelling = clamp((damage - 4) / 48, 0, 1);
-  const severeSwelling = clamp((damage - 28) / 42, 0, 1);
-  const faceDamage = clamp((damage - 40) / 45, 0, 1);
-  const extremeDamage = clamp((damage - 68) / 28, 0, 1);
+  const faceDamage = clamp((damage - 38) / 50, 0, 1);
   const leftAttacking = attack?.side === 'left';
   const rightAttacking = attack?.side === 'right';
 
@@ -159,8 +262,8 @@ function Opponent({ image, fit, hp, hitKey, attack }) {
       )}
 
       <div
-        className="relative z-20 mb-[-10px] h-[210px] w-[178px] overflow-hidden rounded-[42%_42%_46%_46%/36%_36%_58%_58%] border border-white/40 bg-zinc-300 shadow-2xl dark:border-white/10 dark:bg-zinc-700 sm:h-[240px] sm:w-[200px]"
-        style={{ filter: `saturate(${1 - faceDamage * 0.2}) contrast(${1 + faceDamage * 0.11})` }}
+        className="relative z-20 mb-[-10px] h-[210px] w-[178px] overflow-hidden rounded-[42%_42%_46%_46%/36%_36%_58%_58%] border border-white/30 bg-zinc-300 shadow-[0_26px_55px_rgba(0,0,0,.4)] dark:border-white/10 dark:bg-zinc-700 sm:h-[240px] sm:w-[200px]"
+        style={{ filter: `saturate(${1 - faceDamage * 0.14}) contrast(${1 + faceDamage * 0.1})` }}
       >
         {image ? (
           <FaceImage image={image} fit={fit} />
@@ -170,24 +273,7 @@ function Opponent({ image, fit, hp, hitKey, attack }) {
             <p className="text-sm font-semibold">Upload a face to enter the ring</p>
           </div>
         )}
-
-        <div className="pointer-events-none absolute left-[3%] top-[42%] h-[38%] w-[47%] rounded-full mix-blend-multiply blur-[1.2px]" style={{ opacity: bruiseOpacity, transform: `scale(${1 + severeSwelling * 0.28})`, background: 'radial-gradient(circle at 56% 42%, rgba(35,12,74,.98) 0%, rgba(76,29,149,.88) 25%, rgba(127,29,29,.72) 50%, rgba(153,27,27,.3) 69%, transparent 80%)' }} />
-        <div className="pointer-events-none absolute right-[2%] top-[25%] h-[40%] w-[49%] rounded-full mix-blend-multiply blur-[1.2px]" style={{ opacity: heavyBruiseOpacity, transform: `scale(${1 + severeSwelling * 0.32})`, background: 'radial-gradient(circle at 45% 55%, rgba(35,12,74,.98), rgba(88,28,135,.9) 31%, rgba(153,27,27,.68) 58%, transparent 79%)' }} />
-        <div className="pointer-events-none absolute left-[24%] top-[4%] h-[28%] w-[48%] rounded-full mix-blend-multiply blur-[2px]" style={{ opacity: clamp((damage - 22) / 50, 0, 0.78), background: 'radial-gradient(ellipse, rgba(76,29,149,.85), rgba(127,29,29,.5) 54%, transparent 76%)' }} />
-
-        <div className="pointer-events-none absolute left-[10%] top-[29%] h-[22%] w-[36%] rounded-[50%] mix-blend-multiply blur-[1.8px]" style={{ opacity: 0.18 + eyeSwelling * 0.78, background: 'radial-gradient(ellipse, rgba(45,10,68,.98), rgba(127,29,29,.78) 54%, transparent 76%)' }} />
-        <div className="pointer-events-none absolute right-[9%] top-[29%] h-[22%] w-[36%] rounded-[50%] mix-blend-multiply blur-[1.8px]" style={{ opacity: heavyBruiseOpacity * 0.95, background: 'radial-gradient(ellipse, rgba(45,10,68,.98), rgba(127,29,29,.78) 54%, transparent 76%)' }} />
-
-        <div className="pointer-events-none absolute left-[12%] top-[31%] h-[12%] w-[34%] rounded-[50%] bg-red-950/90 shadow-[0_8px_16px_rgba(55,5,20,.65)] blur-[1.2px]" style={{ opacity: eyeSwelling * 0.94, transform: `scaleY(${1 + eyeSwelling * 3.2}) scaleX(${1 + severeSwelling * 0.26})` }} />
-        <div className="pointer-events-none absolute right-[11%] top-[31%] h-[12%] w-[34%] rounded-[50%] bg-red-950/90 shadow-[0_8px_16px_rgba(55,5,20,.65)] blur-[1.2px]" style={{ opacity: eyeSwelling * 0.94, transform: `scaleY(${1 + eyeSwelling * 3.2}) scaleX(${1 + severeSwelling * 0.26})` }} />
-
-        <div className="pointer-events-none absolute left-[16%] top-[36%] h-[4%] w-[25%] rounded-full bg-black/85 blur-[.5px]" style={{ opacity: severeSwelling * 0.88, transform: `scaleY(${1 + extremeDamage * 1.6})` }} />
-        <div className="pointer-events-none absolute right-[15%] top-[36%] h-[4%] w-[25%] rounded-full bg-black/85 blur-[.5px]" style={{ opacity: severeSwelling * 0.88, transform: `scaleY(${1 + extremeDamage * 1.6})` }} />
-
-        <div className="pointer-events-none absolute left-1/2 top-[39%] h-[28%] w-[21%] -translate-x-1/2 rounded-full mix-blend-multiply blur-[1.5px]" style={{ opacity: clamp((damage - 18) / 55, 0, 0.78), background: 'radial-gradient(ellipse, rgba(76,29,149,.84), rgba(153,27,27,.48) 61%, transparent 80%)' }} />
-        <div className="pointer-events-none absolute bottom-[3%] left-[19%] h-[29%] w-[64%] rounded-full mix-blend-multiply blur-[2px]" style={{ opacity: faceDamage * 0.74, background: 'radial-gradient(ellipse, rgba(127,29,29,.72), rgba(88,28,135,.52) 54%, transparent 77%)' }} />
-        <div className="pointer-events-none absolute bottom-[13%] left-[31%] h-[10%] w-[39%] rounded-full bg-red-950/80 blur-[1px]" style={{ opacity: clamp((damage - 34) / 48, 0, 0.9), transform: `scaleY(${1 + faceDamage * 1.25}) scaleX(${1 + extremeDamage * 0.25})` }} />
-        <div className="pointer-events-none absolute inset-0 rounded-[inherit] mix-blend-multiply" style={{ opacity: faceDamage * 0.28, background: 'radial-gradient(circle at 50% 52%, transparent 20%, rgba(127,29,29,.58) 100%)' }} />
+        {image && <FaceDamage damage={damage} />}
       </div>
 
       <div className="relative z-10 h-[180px] w-[260px] rounded-t-[48%] bg-gradient-to-b from-zinc-900 to-black shadow-2xl sm:w-[300px]">
@@ -444,10 +530,43 @@ export default function App() {
               </div>
             </div>
 
-            <div className="pointer-events-none absolute left-1/2 top-[18%] h-28 w-[72%] -translate-x-1/2 rounded-[50%] bg-white/[.35] blur-3xl dark:bg-white/5" />
-            <div className="absolute inset-x-0 bottom-[24%] h-[2px] bg-red-600/80 shadow-[0_-62px_0_rgba(220,38,38,.75),0_-124px_0_rgba(220,38,38,.55)]" />
-            <div className="absolute inset-x-0 bottom-0 h-[29%] bg-[linear-gradient(100deg,rgba(255,255,255,.36),rgba(255,255,255,.08))] dark:bg-[linear-gradient(100deg,rgba(255,255,255,.08),rgba(255,255,255,.015))]" />
-            <div className="absolute bottom-0 left-1/2 h-[24%] w-[92%] -translate-x-1/2 [clip-path:polygon(8%_0,92%_0,100%_100%,0_100%)] border-t border-white/40 bg-white/25 dark:bg-white/[.04]" />
+            <div className="boxing-arena pointer-events-none absolute inset-0 overflow-hidden">
+              <div className="arena-ceiling" />
+              <div className="arena-spotlight arena-spotlight-left" />
+              <div className="arena-spotlight arena-spotlight-right" />
+              <div className="arena-scoreboard">
+                <span>FACE FIGHTER</span>
+                <span className="scoreboard-live">LIVE</span>
+              </div>
+              <div className="arena-crowd">
+                {Array.from({ length: 54 }).map((_, index) => (
+                  <i
+                    key={index}
+                    style={{
+                      left: `${(index * 37) % 101}%`,
+                      top: `${(index * 53) % 83}%`,
+                      width: `${5 + (index % 4)}px`,
+                      height: `${10 + (index % 5) * 2}px`,
+                      opacity: 0.18 + (index % 5) * 0.07,
+                      background: `hsl(${210 + (index % 4) * 12} 12% ${55 + (index % 3) * 8}%)`,
+                    }}
+                  />
+                ))}
+              </div>
+
+              <div className="ring-back-post ring-post-left"><span>FACE</span><span>FIGHTER</span></div>
+              <div className="ring-back-post ring-post-right"><span>FACE</span><span>FIGHTER</span></div>
+              <div className="ring-rope ring-rope-1" />
+              <div className="ring-rope ring-rope-2" />
+              <div className="ring-rope ring-rope-3" />
+              <div className="ring-rope ring-rope-4" />
+              <div className="ring-canvas">
+                <div className="canvas-center-mark">FF</div>
+                <div className="canvas-sponsor canvas-sponsor-left">CHAMPIONSHIP</div>
+                <div className="canvas-sponsor canvas-sponsor-right">FACE FIGHTER</div>
+              </div>
+              <div className="ring-apron"><span>FACE FIGHTER · MAIN EVENT</span></div>
+            </div>
 
             <div className="absolute inset-0 flex items-center justify-center pt-20 sm:pt-24">
               <Opponent image={opponentImage} fit={faceFit} hp={opponentHp} hitKey={hitKey} attack={opponentAttack} />
