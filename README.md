@@ -6,6 +6,7 @@ The project focuses on fast interaction, responsive design, local image handling
 
 > Face Fighter is intended as a fictional entertainment and stress-relief game. Use only images you have permission or the right to use, and avoid using the game to harass, threaten, or target real people.
 
+## Live Link:## https://face-fighter.vercel.app/
 ---
 
 ## Table of Contents
