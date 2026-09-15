@@ -59,29 +59,144 @@ function FaceImage({ image, fit, className = '' }) {
 }
 
 function FaceEditor({ image, fit, setFit, onClose }) {
-  const dragRef = useRef(null);
   const previewRef = useRef(null);
+  const pointersRef = useRef(new Map());
+  const gestureRef = useRef(null);
+  const fitRef = useRef(fit);
+
+  useEffect(() => {
+    fitRef.current = fit;
+  }, [fit]);
+
+  const applyFit = useCallback((nextFit) => {
+    const safeFit = {
+      x: clamp(Number.isFinite(nextFit.x) ? nextFit.x : 0, -40, 40),
+      y: clamp(Number.isFinite(nextFit.y) ? nextFit.y : -5, -40, 40),
+      zoom: clamp(Number.isFinite(nextFit.zoom) ? nextFit.zoom : 1.08, 1, 2.1),
+    };
+    fitRef.current = safeFit;
+    setFit(safeFit);
+  }, [setFit]);
+
+  const beginSingleDrag = useCallback((pointer) => {
+    if (!pointer) {
+      gestureRef.current = null;
+      return;
+    }
+    gestureRef.current = {
+      type: 'drag',
+      pointerId: pointer.id,
+      startX: pointer.x,
+      startY: pointer.y,
+      startFit: { ...fitRef.current },
+    };
+  }, []);
+
+  const beginPinch = useCallback(() => {
+    const points = Array.from(pointersRef.current.values()).slice(0, 2);
+    if (points.length < 2) return;
+    const [a, b] = points;
+    const distance = Math.hypot(b.x - a.x, b.y - a.y);
+    gestureRef.current = {
+      type: 'pinch',
+      startDistance: Math.max(distance, 1),
+      startCenterX: (a.x + b.x) / 2,
+      startCenterY: (a.y + b.y) / 2,
+      startFit: { ...fitRef.current },
+    };
+  }, []);
 
   const onPointerDown = (event) => {
-    event.currentTarget.setPointerCapture?.(event.pointerId);
-    dragRef.current = { x: event.clientX, y: event.clientY, fitX: fit.x, fitY: fit.y };
+    if (!previewRef.current) return;
+    event.preventDefault();
+    try {
+      event.currentTarget.setPointerCapture?.(event.pointerId);
+    } catch {
+      // Some mobile browsers may reject capture during a gesture transition.
+    }
+
+    pointersRef.current.set(event.pointerId, {
+      id: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+    });
+
+    if (pointersRef.current.size >= 2) {
+      beginPinch();
+    } else {
+      beginSingleDrag(pointersRef.current.get(event.pointerId));
+    }
   };
 
   const onPointerMove = (event) => {
-    if (!dragRef.current || !previewRef.current) return;
-    const rect = previewRef.current.getBoundingClientRect();
-    const dx = ((event.clientX - dragRef.current.x) / rect.width) * 100;
-    const dy = ((event.clientY - dragRef.current.y) / rect.height) * 100;
-    setFit((current) => ({
-      ...current,
-      x: clamp(dragRef.current.fitX + dx, -40, 40),
-      y: clamp(dragRef.current.fitY + dy, -40, 40),
-    }));
+    const pointer = pointersRef.current.get(event.pointerId);
+    const preview = previewRef.current;
+    if (!pointer || !preview) return;
+
+    event.preventDefault();
+    const nextPointer = { ...pointer, x: event.clientX, y: event.clientY };
+    pointersRef.current.set(event.pointerId, nextPointer);
+
+    const rect = preview.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+
+    if (pointersRef.current.size >= 2) {
+      if (gestureRef.current?.type !== 'pinch') beginPinch();
+      const gesture = gestureRef.current;
+      const points = Array.from(pointersRef.current.values()).slice(0, 2);
+      if (!gesture || gesture.type !== 'pinch' || points.length < 2) return;
+
+      const [a, b] = points;
+      const distance = Math.max(Math.hypot(b.x - a.x, b.y - a.y), 1);
+      const centerX = (a.x + b.x) / 2;
+      const centerY = (a.y + b.y) / 2;
+      const scale = distance / gesture.startDistance;
+      const dx = ((centerX - gesture.startCenterX) / rect.width) * 100;
+      const dy = ((centerY - gesture.startCenterY) / rect.height) * 100;
+
+      applyFit({
+        x: gesture.startFit.x + dx,
+        y: gesture.startFit.y + dy,
+        zoom: gesture.startFit.zoom * scale,
+      });
+      return;
+    }
+
+    const gesture = gestureRef.current;
+    if (!gesture || gesture.type !== 'drag' || gesture.pointerId !== event.pointerId) {
+      beginSingleDrag(nextPointer);
+      return;
+    }
+
+    const dx = ((event.clientX - gesture.startX) / rect.width) * 100;
+    const dy = ((event.clientY - gesture.startY) / rect.height) * 100;
+    applyFit({
+      ...gesture.startFit,
+      x: gesture.startFit.x + dx,
+      y: gesture.startFit.y + dy,
+    });
   };
 
-  const endDrag = () => {
-    dragRef.current = null;
+  const endPointer = (event) => {
+    // pointerup/pointercancel and lostpointercapture can arrive back-to-back.
+    // Only process the first cleanup for a given pointer.
+    if (!pointersRef.current.has(event.pointerId)) return;
+    pointersRef.current.delete(event.pointerId);
+
+    const remaining = Array.from(pointersRef.current.values());
+    if (remaining.length >= 2) {
+      beginPinch();
+    } else if (remaining.length === 1) {
+      beginSingleDrag(remaining[0]);
+    } else {
+      gestureRef.current = null;
+    }
   };
+
+  useEffect(() => () => {
+    pointersRef.current.clear();
+    gestureRef.current = null;
+  }, []);
 
   return (
     <div
@@ -100,43 +215,47 @@ function FaceEditor({ image, fit, setFit, onClose }) {
             <div className="min-w-0">
               <p className="text-[10px] font-bold uppercase tracking-[.22em] text-zinc-500 dark:text-zinc-400 sm:text-[11px]">Face alignment</p>
               <h2 className="mt-1 text-xl font-semibold tracking-[-.04em] sm:text-2xl">Fit the face inside the guide</h2>
-              <p className="mt-1.5 max-w-xl text-xs leading-5 text-zinc-600 dark:text-zinc-300 sm:mt-2 sm:text-sm sm:leading-6">Drag the photo to reposition it. Use zoom and position controls so the eyes and chin fit the indicator.</p>
+              <p className="mt-1.5 max-w-xl text-xs leading-5 text-zinc-600 dark:text-zinc-300 sm:mt-2 sm:text-sm sm:leading-6">Drag with one finger to reposition. Pinch with two fingers to zoom, then line up the eyes and chin with the guide.</p>
             </div>
             <button type="button" onClick={onClose} aria-label="Close face editor" className="grid h-10 w-10 shrink-0 touch-manipulation place-items-center rounded-full bg-black/[.06] text-xl active:scale-95 dark:bg-white/10">×</button>
           </div>
 
           <div className="mt-4 grid gap-4 sm:mt-5 sm:gap-5 md:grid-cols-[minmax(0,1fr)_250px]">
-            <div
-              ref={previewRef}
-              onPointerDown={onPointerDown}
-              onPointerMove={onPointerMove}
-              onPointerUp={endDrag}
-              onPointerCancel={endDrag}
-              onLostPointerCapture={endDrag}
-              className="relative mx-auto aspect-[4/5] w-[min(78vw,320px)] touch-none cursor-grab overflow-hidden rounded-[24px] bg-zinc-200 shadow-inner active:cursor-grabbing dark:bg-zinc-800 sm:w-full sm:max-w-[360px] sm:rounded-[28px]"
-            >
-              <FaceImage image={image} fit={fit} />
-              <div className="pointer-events-none absolute inset-[9%_13%_8%] rounded-[46%_46%_48%_48%/38%_38%_58%_58%] border-2 border-dashed border-white/90 shadow-[0_0_0_999px_rgba(0,0,0,.28)]" />
-              <div className="pointer-events-none absolute left-[26%] right-[26%] top-[39%] border-t border-white/80" />
-              <div className="pointer-events-none absolute bottom-[18%] left-1/2 top-[13%] border-l border-white/45" />
-              <div className="pointer-events-none absolute left-1/2 top-[39%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/[.55] px-2 py-1 text-[10px] font-bold uppercase tracking-[.16em] text-white">Eyes</div>
+            <div>
+              <div
+                ref={previewRef}
+                onPointerDown={onPointerDown}
+                onPointerMove={onPointerMove}
+                onPointerUp={endPointer}
+                onPointerCancel={endPointer}
+                onLostPointerCapture={endPointer}
+                className="relative mx-auto aspect-[4/5] w-[min(78vw,320px)] touch-none cursor-grab overflow-hidden rounded-[24px] bg-zinc-200 shadow-inner active:cursor-grabbing dark:bg-zinc-800 sm:w-full sm:max-w-[360px] sm:rounded-[28px]"
+                style={{ touchAction: 'none', WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none' }}
+              >
+                <FaceImage image={image} fit={fit} />
+                <div className="pointer-events-none absolute inset-[9%_13%_8%] rounded-[46%_46%_48%_48%/38%_38%_58%_58%] border-2 border-dashed border-white/90 shadow-[0_0_0_999px_rgba(0,0,0,.28)]" />
+                <div className="pointer-events-none absolute left-[26%] right-[26%] top-[39%] border-t border-white/80" />
+                <div className="pointer-events-none absolute bottom-[18%] left-1/2 top-[13%] border-l border-white/45" />
+                <div className="pointer-events-none absolute left-1/2 top-[39%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/[.55] px-2 py-1 text-[10px] font-bold uppercase tracking-[.16em] text-white">Eyes</div>
+              </div>
+              <p className="mt-2 text-center text-[11px] font-medium text-zinc-500 dark:text-zinc-400">1 finger: move · 2 fingers: pinch to zoom</p>
             </div>
 
             <div className="flex min-w-0 flex-col justify-between gap-4 sm:gap-5">
               <div className="space-y-4 sm:space-y-5">
                 <label className="block text-sm font-semibold">
                   Zoom <span className="float-right tabular-nums text-zinc-500">{fit.zoom.toFixed(2)}×</span>
-                  <input className="mt-2 h-8 w-full touch-manipulation accent-blue-600" type="range" min="1" max="2.1" step="0.01" value={fit.zoom} onChange={(e) => setFit((f) => ({ ...f, zoom: Number(e.target.value) }))} />
+                  <input className="mt-2 h-8 w-full touch-manipulation accent-blue-600" type="range" min="1" max="2.1" step="0.01" value={fit.zoom} onChange={(e) => applyFit({ ...fitRef.current, zoom: Number(e.target.value) })} />
                 </label>
                 <label className="block text-sm font-semibold">
                   Horizontal <span className="float-right tabular-nums text-zinc-500">{Math.round(fit.x)}</span>
-                  <input className="mt-2 h-8 w-full touch-manipulation accent-blue-600" type="range" min="-40" max="40" step="1" value={fit.x} onChange={(e) => setFit((f) => ({ ...f, x: Number(e.target.value) }))} />
+                  <input className="mt-2 h-8 w-full touch-manipulation accent-blue-600" type="range" min="-40" max="40" step="1" value={fit.x} onChange={(e) => applyFit({ ...fitRef.current, x: Number(e.target.value) })} />
                 </label>
                 <label className="block text-sm font-semibold">
                   Vertical <span className="float-right tabular-nums text-zinc-500">{Math.round(fit.y)}</span>
-                  <input className="mt-2 h-8 w-full touch-manipulation accent-blue-600" type="range" min="-40" max="40" step="1" value={fit.y} onChange={(e) => setFit((f) => ({ ...f, y: Number(e.target.value) }))} />
+                  <input className="mt-2 h-8 w-full touch-manipulation accent-blue-600" type="range" min="-40" max="40" step="1" value={fit.y} onChange={(e) => applyFit({ ...fitRef.current, y: Number(e.target.value) })} />
                 </label>
-                <button type="button" onClick={() => setFit(DEFAULT_FACE_FIT)} className="w-full touch-manipulation rounded-2xl border border-black/10 px-4 py-3 text-sm font-semibold active:scale-[.99] hover:bg-black/[.04] dark:border-white/15 dark:hover:bg-white/10">Reset alignment</button>
+                <button type="button" onClick={() => applyFit(DEFAULT_FACE_FIT)} className="w-full touch-manipulation rounded-2xl border border-black/10 px-4 py-3 text-sm font-semibold active:scale-[.99] hover:bg-black/[.04] dark:border-white/15 dark:hover:bg-white/10">Reset alignment</button>
               </div>
               <div className="sticky bottom-0 -mx-1 bg-gradient-to-t from-white via-white/95 to-transparent px-1 pb-1 pt-3 dark:from-zinc-950 dark:via-zinc-950/95 md:static md:m-0 md:bg-none md:p-0">
                 <button type="button" onClick={onClose} className="w-full touch-manipulation rounded-2xl bg-blue-600 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 active:scale-[.99] hover:bg-blue-500">Use this fit</button>
@@ -256,7 +375,7 @@ function Opponent({ image, fit, hp, hitKey, attack }) {
     >
       {attack && (
         <div key={attack.id} className={`opponent-camera-glove ${attack.side === 'left' ? 'camera-glove-left' : 'camera-glove-right'}`}>
-          <div className="h-full w-full rounded-[46%_46%_42%_42%] bg-gradient-to-br from-red-500 to-red-800 shadow-[0_25px_70px_rgba(0,0,0,.45)] ring-2 ring-black/20" />
+          <div className="h-full w-full rounded-[46%_46%_42%_42%] bg-gradient-to-br from-blue-400 via-blue-600 to-blue-900 shadow-[0_25px_70px_rgba(0,0,0,.45)] ring-2 ring-black/20" />
           <div className="absolute bottom-[-18%] left-1/2 h-[38%] w-[58%] -translate-x-1/2 rounded-b-[28px] bg-zinc-950" />
         </div>
       )}
@@ -279,11 +398,11 @@ function Opponent({ image, fit, hp, hitKey, attack }) {
       <div className="relative z-10 h-[180px] w-[260px] rounded-t-[48%] bg-gradient-to-b from-zinc-900 to-black shadow-2xl sm:w-[300px]">
         <div className={`opponent-arm opponent-arm-left absolute left-[-29px] top-7 h-28 w-24 origin-bottom-right ${leftAttacking ? 'opponent-left-punch' : ''}`}>
           <div className="absolute bottom-0 right-2 h-20 w-12 rotate-[22deg] rounded-full bg-zinc-900" />
-          <div className="absolute left-0 top-0 h-24 w-20 rotate-[16deg] rounded-[45%] bg-gradient-to-br from-red-500 to-red-700 shadow-lg ring-1 ring-black/20" />
+          <div className="absolute left-0 top-0 h-24 w-20 rotate-[16deg] rounded-[45%] bg-gradient-to-br from-blue-400 via-blue-600 to-blue-800 shadow-lg ring-1 ring-black/20" />
         </div>
         <div className={`opponent-arm opponent-arm-right absolute right-[-29px] top-7 h-28 w-24 origin-bottom-left ${rightAttacking ? 'opponent-right-punch' : ''}`}>
           <div className="absolute bottom-0 left-2 h-20 w-12 rotate-[-22deg] rounded-full bg-zinc-900" />
-          <div className="absolute right-0 top-0 h-24 w-20 rotate-[-16deg] rounded-[45%] bg-gradient-to-bl from-red-500 to-red-700 shadow-lg ring-1 ring-black/20" />
+          <div className="absolute right-0 top-0 h-24 w-20 rotate-[-16deg] rounded-[45%] bg-gradient-to-bl from-blue-400 via-blue-600 to-blue-800 shadow-lg ring-1 ring-black/20" />
         </div>
         <div className="absolute left-1/2 top-8 -translate-x-1/2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[10px] font-bold tracking-[.26em] text-white/80">FACE FIGHTER</div>
       </div>
