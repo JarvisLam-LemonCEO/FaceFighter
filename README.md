@@ -5,13 +5,13 @@ A responsive React + Tailwind CSS browser boxing mini-game with an Apple-inspire
 ## Features
 
 - Upload an opponent portrait locally in the browser
-- Face alignment editor with drag, zoom, horizontal and vertical adjustment
+- Face alignment editor with one-finger drag, two-finger pinch-to-zoom, and slider-based position/zoom adjustment
 - Mobile-safe face editor with independent scrolling, safe-area padding and touch-friendly controls
 - First-person left/right punch controls
 - Keyboard controls: A / D, Left / Right Arrow
 - Enter / Space to start or restart a round
 - Instant keyboard rematch after KO
-- Opponent counter-punch animations with screen impact feedback
+- Blue opponent boxing gloves with counter-punch animations and screen impact feedback
 - Progressive face-mapped bruising, black-eye swelling, cheek/jaw trauma, nose bruising and nosebleeds as HP drops
 - Professional arena presentation with four ring ropes, corner posts, canvas/apron branding, spotlights and crowd depth
 - Light and dark mode

@@ -3,6 +3,31 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
 const DEFAULT_FACE_FIT = { x: 0, y: -5, zoom: 1.08 };
 
+const BRUISE_PALETTES = [
+  'radial-gradient(ellipse at 50% 45%, rgba(61,18,94,.92) 0%, rgba(119,35,74,.72) 42%, rgba(181,61,48,.28) 68%, transparent 82%)',
+  'radial-gradient(ellipse at 46% 48%, rgba(37,22,92,.9) 0%, rgba(90,38,112,.74) 40%, rgba(159,49,61,.3) 69%, transparent 83%)',
+  'radial-gradient(ellipse at 54% 42%, rgba(91,24,68,.9) 0%, rgba(134,42,61,.7) 43%, rgba(190,79,54,.25) 70%, transparent 84%)',
+];
+
+function generateRandomBruises(count = 9) {
+  return Array.from({ length: count }, (_, index) => {
+    // Keep marks inside the visible oval of the aligned face.
+    const band = index % 3;
+    const xRanges = band === 0 ? [14, 38] : band === 1 ? [38, 62] : [62, 86];
+    return {
+      id: `${Date.now()}-${index}-${Math.random().toString(36).slice(2)}`,
+      x: xRanges[0] + Math.random() * (xRanges[1] - xRanges[0]),
+      y: 18 + Math.random() * 60,
+      width: 15 + Math.random() * 16,
+      height: 8 + Math.random() * 13,
+      rotation: -28 + Math.random() * 56,
+      threshold: 7 + index * 8 + Math.random() * 6,
+      strength: 0.58 + Math.random() * 0.34,
+      palette: BRUISE_PALETTES[Math.floor(Math.random() * BRUISE_PALETTES.length)],
+    };
+  }).sort((a, b) => a.threshold - b.threshold);
+}
+
 function HealthBar({ label, value, align = 'left' }) {
   const pct = clamp(value, 0, 100);
   const bar = pct > 55 ? 'bg-emerald-500' : pct > 25 ? 'bg-amber-500' : 'bg-red-500';
@@ -268,7 +293,7 @@ function FaceEditor({ image, fit, setFit, onClose }) {
   );
 }
 
-function FaceDamage({ damage }) {
+function FaceDamage({ damage, bruises = [] }) {
   const early = clamp((damage - 4) / 24, 0, 1);
   const medium = clamp((damage - 18) / 32, 0, 1);
   const heavy = clamp((damage - 38) / 34, 0, 1);
@@ -278,6 +303,26 @@ function FaceDamage({ damage }) {
 
   return (
     <div className="pointer-events-none absolute inset-0 z-20 overflow-hidden rounded-[inherit]">
+      {/* Randomized surface bruises. Positions are generated once per round so they do not jump around. */}
+      {bruises.map((bruise) => {
+        const reveal = clamp((damage - bruise.threshold) / 20, 0, 1);
+        if (reveal <= 0) return null;
+        return (
+          <div
+            key={bruise.id}
+            className="absolute rounded-[50%] mix-blend-multiply blur-[1.25px]"
+            style={{
+              left: `${bruise.x - bruise.width / 2}%`,
+              top: `${bruise.y - bruise.height / 2}%`,
+              width: `${bruise.width}%`,
+              height: `${bruise.height}%`,
+              opacity: reveal * bruise.strength,
+              transform: `rotate(${bruise.rotation}deg) scale(${0.82 + reveal * 0.28})`,
+              background: bruise.palette,
+            }}
+          />
+        );
+      })}
       {/* Left eye / upper cheek */}
       <div
         className="absolute left-[10%] top-[27%] h-[24%] w-[38%] rounded-[48%] mix-blend-multiply blur-[1.4px]"
@@ -362,7 +407,7 @@ function FaceDamage({ damage }) {
   );
 }
 
-function Opponent({ image, fit, hp, hitKey, attack }) {
+function Opponent({ image, fit, hp, hitKey, attack, bruises }) {
   const damage = 100 - hp;
   const faceDamage = clamp((damage - 38) / 50, 0, 1);
   const leftAttacking = attack?.side === 'left';
@@ -392,7 +437,7 @@ function Opponent({ image, fit, hp, hitKey, attack }) {
             <p className="text-sm font-semibold">Upload a face to enter the ring</p>
           </div>
         )}
-        {image && <FaceDamage damage={damage} />}
+        {image && <FaceDamage damage={damage} bruises={bruises} />}
       </div>
 
       <div className="relative z-10 h-[180px] w-[260px] rounded-t-[48%] bg-gradient-to-b from-zinc-900 to-black shadow-2xl sm:w-[300px]">
@@ -438,6 +483,7 @@ export default function App() {
   const [incomingDamageText, setIncomingDamageText] = useState(null);
   const [opponentAttack, setOpponentAttack] = useState(null);
   const [playerHit, setPlayerHit] = useState(false);
+  const [roundBruises, setRoundBruises] = useState(() => generateRandomBruises());
   const [roundStarted, setRoundStarted] = useState(false);
   const [soundOn, setSoundOn] = useState(false);
   const audioRef = useRef(null);
@@ -475,6 +521,7 @@ export default function App() {
     setIncomingDamageText(null);
     setOpponentAttack(null);
     setPlayerHit(false);
+    setRoundBruises(generateRandomBruises());
     setRoundStarted(true);
   }, [opponentImage]);
 
@@ -688,7 +735,7 @@ export default function App() {
             </div>
 
             <div className="absolute inset-0 flex items-center justify-center pt-20 sm:pt-24">
-              <Opponent image={opponentImage} fit={faceFit} hp={opponentHp} hitKey={hitKey} attack={opponentAttack} />
+              <Opponent image={opponentImage} fit={faceFit} hp={opponentHp} hitKey={hitKey} attack={opponentAttack} bruises={roundBruises} />
             </div>
 
             {damageText && <div key={damageText.id} className="damage-pop pointer-events-none absolute left-1/2 top-[35%] z-50 -translate-x-1/2 rounded-full bg-black/75 px-3 py-1.5 text-lg font-bold text-white shadow-xl">-{damageText.value}</div>}
