@@ -413,8 +413,8 @@ function FaceDamage({ damage, bruises = [] }) {
   );
 }
 
-function Opponent({ image, fit, hp, hitKey, attack, bruises }) {
-  const damage = 100 - hp;
+function Opponent({ image, fit, hp, damageOverride = null, hitKey, attack, bruises }) {
+  const damage = damageOverride == null ? 100 - hp : clamp(damageOverride, 0, 100);
   const faceDamage = clamp((damage - 38) / 50, 0, 1);
   const leftAttacking = attack?.side === 'left';
   const rightAttacking = attack?.side === 'right';
@@ -493,19 +493,28 @@ export default function App() {
   const [gameMode, setGameMode] = useState('classic');
   const [timeLimit, setTimeLimit] = useState(60);
   const [timeLeft, setTimeLeft] = useState(60);
+  const [timedHits, setTimedHits] = useState(0);
+  const [timedVisualDamage, setTimedVisualDamage] = useState(0);
   const [roundStarted, setRoundStarted] = useState(false);
   const [soundOn, setSoundOn] = useState(false);
   const audioRef = useRef(null);
 
   const timedOut = gameMode === 'timed' && roundStarted && timeLeft <= 0;
-  const isOver = opponentHp <= 0 || playerHp <= 0 || timedOut;
-  const result = opponentHp <= 0 ? 'Opponent KO' : playerHp <= 0 ? 'You are down' : timedOut ? 'Time up' : null;
-  const resultDetail = opponentHp <= 0
-    ? 'You beat the opponent before the round ended.'
-    : playerHp <= 0
-      ? 'The opponent scored the KO.'
-      : timedOut
-        ? `The opponent survived with ${opponentHp} HP.`
+  const classicOver = gameMode === 'classic' && (opponentHp <= 0 || playerHp <= 0);
+  const isOver = classicOver || timedOut;
+  const result = gameMode === 'timed'
+    ? (timedOut ? 'Time up' : null)
+    : opponentHp <= 0
+      ? 'Opponent KO'
+      : playerHp <= 0
+        ? 'You are down'
+        : null;
+  const resultDetail = gameMode === 'timed' && timedOut
+    ? `You landed ${timedHits} ${timedHits === 1 ? 'hit' : 'hits'} before the bell.`
+    : opponentHp <= 0
+      ? 'You beat the opponent before the round ended.'
+      : playerHp <= 0
+        ? 'The opponent scored the KO.'
         : '';
 
   const playImpact = useCallback(() => {
@@ -539,6 +548,8 @@ export default function App() {
     setOpponentAttack(null);
     setPlayerHit(false);
     setRoundBruises(generateRandomBruises());
+    setTimedHits(0);
+    setTimedVisualDamage(0);
     setTimeLeft(timeLimit);
     setRoundStarted(true);
   }, [opponentImage, timeLimit]);
@@ -546,14 +557,23 @@ export default function App() {
   const performPunch = useCallback((side) => {
     if (!opponentImage || punchSide) return;
     const damage = Math.floor(7 + Math.random() * 10);
+    const eventId = Date.now();
     setPunchSide(side);
     setHitKey((n) => n + 1);
-    setDamageText({ value: damage, id: Date.now() });
-    setOpponentHp((hp) => clamp(hp - damage, 0, 100));
+
+    if (gameMode === 'timed') {
+      setTimedHits((hits) => hits + 1);
+      setTimedVisualDamage((current) => clamp(current + 4 + Math.random() * 4.5, 0, 100));
+      setDamageText({ value: 'HIT', id: eventId });
+    } else {
+      setDamageText({ value: damage, id: eventId });
+      setOpponentHp((hp) => clamp(hp - damage, 0, 100));
+    }
+
     playImpact();
     window.setTimeout(() => setPunchSide(null), 350);
     window.setTimeout(() => setDamageText(null), 720);
-  }, [opponentImage, punchSide, playImpact]);
+  }, [opponentImage, punchSide, playImpact, gameMode]);
 
   const requestPunch = useCallback((side) => {
     if (!opponentImage || faceEditorOpen) return;
@@ -574,6 +594,8 @@ export default function App() {
     setOpponentAttack(null);
     setPlayerHit(false);
     setTimeLeft(timeLimit);
+    setTimedHits(0);
+    setTimedVisualDamage(0);
     setRoundStarted(false);
   }, [timeLimit]);
 
@@ -582,13 +604,13 @@ export default function App() {
     if (!roundStarted) return gameMode === 'timed'
       ? `Time Limit ready: ${formatTime(timeLimit)}. Press a fight key to start.`
       : 'Classic mode ready. Press A / D, ← / →, Enter, or Space to start.';
-    if (opponentHp <= 0) return 'KO. Press any fight key to rematch instantly.';
-    if (playerHp <= 0) return 'You are down. Press any fight key to rematch instantly.';
-    if (timedOut) return 'Time up. Press any fight key to try again.';
+    if (timedOut) return `Time up · ${timedHits} ${timedHits === 1 ? 'hit' : 'hits'}. Press any fight key to go again.`;
+    if (gameMode === 'classic' && opponentHp <= 0) return 'KO. Press any fight key to rematch instantly.';
+    if (gameMode === 'classic' && playerHp <= 0) return 'You are down. Press any fight key to rematch instantly.';
     return gameMode === 'timed'
-      ? `${formatTime(timeLeft)} remaining · KO the opponent before time expires.`
+      ? `${formatTime(timeLeft)} remaining · ${timedHits} ${timedHits === 1 ? 'hit' : 'hits'} · keep punching until the bell.`
       : 'Fight: A / D or ← / →. The opponent will punch back.';
-  }, [opponentImage, roundStarted, opponentHp, playerHp, gameMode, timeLimit, timeLeft, timedOut]);
+  }, [opponentImage, roundStarted, opponentHp, playerHp, gameMode, timeLimit, timeLeft, timedOut, timedHits]);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark);
@@ -636,8 +658,12 @@ export default function App() {
         setOpponentAttack({ side, id: attackId });
 
         pending.push(window.setTimeout(() => {
-          setPlayerHp((hp) => clamp(hp - incoming, 0, 100));
-          setIncomingDamageText({ value: incoming, id: attackId });
+          if (gameMode === 'classic') {
+            setPlayerHp((hp) => clamp(hp - incoming, 0, 100));
+            setIncomingDamageText({ value: incoming, id: attackId });
+          } else {
+            setIncomingDamageText({ value: 'COUNTER', id: attackId });
+          }
           setPlayerHit(true);
           playImpact();
         }, 420));
@@ -656,7 +682,7 @@ export default function App() {
       setPlayerHit(false);
       setIncomingDamageText(null);
     };
-  }, [roundStarted, isOver, playImpact]);
+  }, [roundStarted, isOver, playImpact, gameMode]);
 
   const onUpload = (event) => {
     const file = event.target.files?.[0];
@@ -704,10 +730,23 @@ export default function App() {
               <button onClick={() => setFaceEditorOpen(true)} className="mt-2 w-full rounded-2xl border border-black/10 px-4 py-3 text-sm font-semibold transition hover:bg-black/[.04] dark:border-white/15 dark:hover:bg-white/10">Adjust face fit</button>
             )}
 
-            <div className="mt-6 space-y-5">
-              <HealthBar label="You" value={playerHp} />
-              <HealthBar label="Opponent" value={opponentHp} />
-            </div>
+            {gameMode === 'classic' ? (
+              <div className="mt-6 space-y-5">
+                <HealthBar label="You" value={playerHp} />
+                <HealthBar label="Opponent" value={opponentHp} />
+              </div>
+            ) : (
+              <div className="mt-6 grid grid-cols-2 gap-3">
+                <div className="rounded-2xl border border-black/5 bg-black/[.03] p-4 dark:border-white/10 dark:bg-white/[.06]">
+                  <div className="text-[10px] font-bold uppercase tracking-[.18em] text-zinc-500 dark:text-zinc-400">Hits</div>
+                  <div className="mt-1 text-3xl font-bold tabular-nums tracking-[-.04em]">{timedHits}</div>
+                </div>
+                <div className="rounded-2xl border border-blue-500/15 bg-blue-500/[.08] p-4">
+                  <div className="text-[10px] font-bold uppercase tracking-[.18em] text-blue-600 dark:text-blue-300">Time</div>
+                  <div className="mt-1 text-3xl font-bold tabular-nums tracking-[-.04em]">{formatTime(timeLeft)}</div>
+                </div>
+              </div>
+            )}
 
             <div className="mt-6 rounded-[22px] border border-black/5 bg-black/[.03] p-3 dark:border-white/10 dark:bg-white/[.06]">
               <div className="text-xs font-bold uppercase tracking-[.16em] text-zinc-500 dark:text-zinc-400">Game mode</div>
@@ -768,14 +807,14 @@ export default function App() {
                       </button>
                     ))}
                   </div>
-                  <p className="mt-2 text-xs leading-5 text-zinc-500 dark:text-zinc-400">Set 10–600 seconds. Win by knocking out the opponent before the clock reaches zero.</p>
+                  <p className="mt-2 text-xs leading-5 text-zinc-500 dark:text-zinc-400">Set 10–600 seconds. There are no health points or KO in this mode—land as many hits as you want before the bell.</p>
                 </div>
               )}
             </div>
 
             <div className="mt-4 rounded-2xl border border-black/5 bg-black/[.03] p-4 dark:border-white/10 dark:bg-white/[.06]">
               <div className="text-xs font-bold uppercase tracking-[.16em] text-zinc-500 dark:text-zinc-400">Controls</div>
-              <p className="mt-2 text-sm leading-6 text-zinc-700 dark:text-zinc-300">A / D or ← / → punch. Enter or Space starts a round. In Time Limit mode, KO the opponent before the countdown ends. Any fight key starts an instant rematch.</p>
+              <p className="mt-2 text-sm leading-6 text-zinc-700 dark:text-zinc-300">A / D or ← / → punch. Enter or Space starts a round. Time Limit mode has no HP or KO—keep hitting until the timer reaches zero. Any fight key starts an instant rematch.</p>
             </div>
 
             <div className="mt-5 flex gap-2">
@@ -786,14 +825,27 @@ export default function App() {
 
           <div className={`relative order-1 min-h-[62vh] overflow-hidden rounded-[30px] border border-black/5 bg-gradient-to-b from-sky-100 via-zinc-100 to-zinc-300 shadow-apple dark:border-white/10 dark:from-zinc-800 dark:via-zinc-900 dark:to-black lg:order-2 lg:min-h-[690px] ${playerHit ? 'player-hit-screen' : ''}`}>
             <div className="absolute inset-x-0 top-0 z-30 p-4 sm:p-5">
-              <div className="glass mx-auto grid max-w-5xl grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2 rounded-[22px] border border-white/20 bg-white/60 p-3 shadow-lg dark:border-white/10 dark:bg-black/[.35] sm:gap-5 sm:p-4">
-                <HealthBar label="Player" value={playerHp} />
-                <div className={`min-w-[58px] rounded-xl border px-2 py-1.5 text-center shadow-sm sm:min-w-[78px] sm:px-3 sm:py-2 ${gameMode === 'timed' ? 'border-blue-500/25 bg-blue-600 text-white' : 'border-black/5 bg-white/70 text-zinc-700 dark:border-white/10 dark:bg-white/10 dark:text-white'}`}>
-                  <div className="text-[8px] font-bold uppercase tracking-[.16em] opacity-75 sm:text-[9px]">{gameMode === 'timed' ? 'Time' : 'Mode'}</div>
-                  <div className="mt-0.5 text-sm font-bold tabular-nums sm:text-lg">{gameMode === 'timed' ? formatTime(timeLeft) : '∞'}</div>
+              {gameMode === 'timed' ? (
+                <div className="glass mx-auto grid max-w-3xl grid-cols-2 items-center gap-3 rounded-[22px] border border-white/20 bg-white/60 p-3 shadow-lg dark:border-white/10 dark:bg-black/[.35] sm:gap-5 sm:p-4">
+                  <div className="rounded-2xl border border-black/5 bg-white/70 px-4 py-2.5 dark:border-white/10 dark:bg-white/10">
+                    <div className="text-[9px] font-bold uppercase tracking-[.18em] text-zinc-500 dark:text-zinc-400">Hits landed</div>
+                    <div className="mt-0.5 text-2xl font-bold tabular-nums sm:text-3xl">{timedHits}</div>
+                  </div>
+                  <div className="rounded-2xl border border-blue-500/25 bg-blue-600 px-4 py-2.5 text-right text-white shadow-sm">
+                    <div className="text-[9px] font-bold uppercase tracking-[.18em] text-white/75">Time left</div>
+                    <div className="mt-0.5 text-2xl font-bold tabular-nums sm:text-3xl">{formatTime(timeLeft)}</div>
+                  </div>
                 </div>
-                <HealthBar label="Opponent" value={opponentHp} align="right" />
-              </div>
+              ) : (
+                <div className="glass mx-auto grid max-w-5xl grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2 rounded-[22px] border border-white/20 bg-white/60 p-3 shadow-lg dark:border-white/10 dark:bg-black/[.35] sm:gap-5 sm:p-4">
+                  <HealthBar label="Player" value={playerHp} />
+                  <div className="min-w-[58px] rounded-xl border border-black/5 bg-white/70 px-2 py-1.5 text-center text-zinc-700 shadow-sm dark:border-white/10 dark:bg-white/10 dark:text-white sm:min-w-[78px] sm:px-3 sm:py-2">
+                    <div className="text-[8px] font-bold uppercase tracking-[.16em] opacity-75 sm:text-[9px]">Mode</div>
+                    <div className="mt-0.5 text-sm font-bold sm:text-lg">∞</div>
+                  </div>
+                  <HealthBar label="Opponent" value={opponentHp} align="right" />
+                </div>
+              )}
             </div>
 
             <div className="boxing-arena pointer-events-none absolute inset-0 overflow-hidden">
@@ -802,7 +854,7 @@ export default function App() {
               <div className="arena-spotlight arena-spotlight-right" />
               <div className="arena-scoreboard">
                 <span>FACE FIGHTER</span>
-                <span>{gameMode === 'timed' ? formatTime(timeLeft) : 'NO LIMIT'}</span>
+                <span>{gameMode === 'timed' ? `HITS ${timedHits} · ${formatTime(timeLeft)}` : 'NO LIMIT'}</span>
                 <span className="scoreboard-live">LIVE</span>
               </div>
               <div className="arena-crowd">
@@ -836,11 +888,11 @@ export default function App() {
             </div>
 
             <div className="absolute inset-0 flex items-center justify-center pt-20 sm:pt-24">
-              <Opponent image={opponentImage} fit={faceFit} hp={opponentHp} hitKey={hitKey} attack={opponentAttack} bruises={roundBruises} />
+              <Opponent image={opponentImage} fit={faceFit} hp={opponentHp} damageOverride={gameMode === 'timed' ? timedVisualDamage : null} hitKey={hitKey} attack={opponentAttack} bruises={roundBruises} />
             </div>
 
-            {damageText && <div key={damageText.id} className="damage-pop pointer-events-none absolute left-1/2 top-[35%] z-50 -translate-x-1/2 rounded-full bg-black/75 px-3 py-1.5 text-lg font-bold text-white shadow-xl">-{damageText.value}</div>}
-            {incomingDamageText && <div key={incomingDamageText.id} className="incoming-damage-pop pointer-events-none absolute left-1/2 top-[17%] z-[90] -translate-x-1/2 rounded-full bg-red-600/90 px-3 py-1.5 text-lg font-bold text-white shadow-xl">-{incomingDamageText.value} HP</div>}
+            {damageText && <div key={damageText.id} className="damage-pop pointer-events-none absolute left-1/2 top-[35%] z-50 -translate-x-1/2 rounded-full bg-black/75 px-3 py-1.5 text-lg font-bold text-white shadow-xl">{gameMode === 'timed' ? damageText.value : `-${damageText.value}`}</div>}
+            {incomingDamageText && <div key={incomingDamageText.id} className="incoming-damage-pop pointer-events-none absolute left-1/2 top-[17%] z-[90] -translate-x-1/2 rounded-full bg-red-600/90 px-3 py-1.5 text-lg font-bold text-white shadow-xl">{gameMode === 'timed' ? incomingDamageText.value : `-${incomingDamageText.value} HP`}</div>}
             {playerHit && <div className="hit-vignette pointer-events-none absolute inset-0 z-[85]" />}
 
             {result && (
