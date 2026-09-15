@@ -1,5 +1,5 @@
 # Face Fighter
-## Demo Link: ## https://face-fighter.vercel.app
+## Demo Link: https://face-fighter.vercel.app
 **Face Fighter** is a responsive browser-based boxing mini-game built with **React**, **Tailwind CSS**, and **Vite**. Players can upload and align an opponent portrait, enter a first-person boxing ring, and use keyboard, mouse, or touch controls to throw punches.
 
 The project focuses on fast interaction, responsive design, local image handling, progressive visual damage effects, and an Apple-inspired interface that works across desktop, laptop, tablet, and mobile devices.
