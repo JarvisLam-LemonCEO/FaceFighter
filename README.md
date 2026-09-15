@@ -6,7 +6,6 @@ The project focuses on fast interaction, responsive design, local image handling
 
 > Face Fighter is intended as a fictional entertainment and stress-relief game. Use only images you have permission or the right to use, and avoid using the game to harass, threaten, or target real people.
 
-## Live Link:## https://face-fighter.vercel.app/
 ---
 
 ## Table of Contents
@@ -30,6 +29,10 @@ The project focuses on fast interaction, responsive design, local image handling
 - [License](#license)
 
 ---
+
+## Languages
+
+Face Fighter includes a built-in language switch for **English** and **Traditional Chinese (繁體中文)**. The selected language is saved in the browser and restored on the next visit. The translation covers gameplay modes, controls, face alignment, timer settings, HUD labels, results, and status messages.
 
 ## Features
 

@@ -9,6 +9,58 @@ const formatTime = (seconds) => {
 };
 const DEFAULT_FACE_FIT = { x: 0, y: -5, zoom: 1.08 };
 
+const TRANSLATIONS = {
+  en: {
+    languageName: 'English', languageShort: 'EN', switchLanguage: 'Switch language',
+    stressRelease: 'Stress release mini game', sound: 'Sound', on: 'On', off: 'Off', toggleTheme: 'Toggle theme',
+    opponent: 'Opponent', chooseFace: 'Choose a face', uploadHelp: 'Upload a clear portrait, then align the eyes and chin with the face guide. The image stays in this browser session.',
+    chooseAnotherPhoto: 'Choose another photo', uploadPhoto: 'Upload photo', adjustFaceFit: 'Adjust face fit', you: 'You', player: 'Player', hp: 'HP',
+    hits: 'Hits', time: 'Time', gameMode: 'Game mode', classic: 'Classic', timeLimit: 'Time Limit', roundTime: 'Round time', secondsShort: 'sec', secondsUnit: 's', minutesUnit: 'm',
+    timedHelp: 'Set 10–600 seconds. There are no health points or KO in this mode—land as many hits as you want before the bell.',
+    controls: 'Controls', controlsHelp: 'A / D or ← / → punch. Enter or Space starts a round. Time Limit mode has no HP or KO—keep hitting until the timer reaches zero. Any fight key starts an instant rematch.',
+    fightAgain: 'Fight again', roundActive: 'Round active', startRound: 'Start round', reset: 'Reset', hitsLanded: 'Hits landed', timeLeft: 'Time left', mode: 'Mode', noLimit: 'NO LIMIT', live: 'LIVE',
+    championship: 'CHAMPIONSHIP', mainEvent: 'MAIN EVENT', roundComplete: 'Round complete', restartHint1: 'A / D · ← / → to rematch and punch immediately', restartHint2: 'Enter / Space to restart',
+    leftPunch: 'Left punch', rightPunch: 'Right punch', uploadedOpponent: 'Uploaded opponent', uploadFaceRing: 'Upload a face to enter the ring',
+    faceAlignment: 'Face alignment', fitFaceGuide: 'Fit the face inside the guide', faceGuideHelp: 'Drag with one finger to reposition. Pinch with two fingers to zoom, then line up the eyes and chin with the guide.',
+    closeFaceEditor: 'Close face editor', eyes: 'Eyes', gestureHint: '1 finger: move · 2 fingers: pinch to zoom', zoom: 'Zoom', horizontal: 'Horizontal', vertical: 'Vertical', resetAlignment: 'Reset alignment', useFit: 'Use this fit',
+    timeUp: 'Time up', opponentKO: 'Opponent KO', youAreDown: 'You are down', hit: 'hit', hitsLower: 'hits', counter: 'COUNTER', hitUpper: 'HIT',
+    timedResult: (count) => `You landed ${count} ${count === 1 ? 'hit' : 'hits'} before the bell.`,
+    winResult: 'You beat the opponent before the round ended.', loseResult: 'The opponent scored the KO.',
+    statusUpload: 'Upload a face, adjust the fit, then press A / D or Enter.',
+    statusTimedReady: (time) => `Time Limit ready: ${time}. Press a fight key to start.`,
+    statusClassicReady: 'Classic mode ready. Press A / D, ← / →, Enter, or Space to start.',
+    statusTimeUp: (count) => `Time up · ${count} ${count === 1 ? 'hit' : 'hits'}. Press any fight key to go again.`,
+    statusKO: 'KO. Press any fight key to rematch instantly.', statusDown: 'You are down. Press any fight key to rematch instantly.',
+    statusTimedFight: (time, count) => `${time} remaining · ${count} ${count === 1 ? 'hit' : 'hits'} · keep punching until the bell.`,
+    statusClassicFight: 'Fight: A / D or ← / →. The opponent will punch back.',
+  },
+  zhHant: {
+    languageName: '繁體中文', languageShort: '繁中', switchLanguage: '切換語言',
+    stressRelease: '紓壓拳擊小遊戲', sound: '音效', on: '開', off: '關', toggleTheme: '切換明暗模式',
+    opponent: '對手', chooseFace: '選擇對手照片', uploadHelp: '上傳清晰的人像照片，然後依照臉部指示框對齊眼睛與下巴。照片只會保留在目前的瀏覽器工作階段。',
+    chooseAnotherPhoto: '選擇其他照片', uploadPhoto: '上傳照片', adjustFaceFit: '調整臉部位置', you: '你', player: '玩家', hp: '生命值',
+    hits: '命中次數', time: '時間', gameMode: '遊戲模式', classic: '經典模式', timeLimit: '限時模式', roundTime: '回合時間', secondsShort: '秒', secondsUnit: '秒', minutesUnit: '分',
+    timedHelp: '可設定 10–600 秒。此模式沒有生命值或 KO，你可以在鐘聲響起前持續出拳並累積命中次數。',
+    controls: '操作方式', controlsHelp: '按 A / D 或 ← / → 出拳。按 Enter 或空白鍵開始回合。限時模式沒有生命值或 KO，可一直出拳直到時間歸零。回合結束後按任何出拳鍵即可立即再戰。',
+    fightAgain: '再戰一次', roundActive: '回合進行中', startRound: '開始回合', reset: '重設', hitsLanded: '命中次數', timeLeft: '剩餘時間', mode: '模式', noLimit: '無限時', live: '直播',
+    championship: '冠軍賽', mainEvent: '主賽', roundComplete: '回合結束', restartHint1: '按 A / D · ← / → 立即再戰並出拳', restartHint2: '按 Enter / 空白鍵重新開始',
+    leftPunch: '左拳', rightPunch: '右拳', uploadedOpponent: '已上傳的對手照片', uploadFaceRing: '上傳對手照片以進入拳擊擂台',
+    faceAlignment: '臉部對齊', fitFaceGuide: '將臉部調整至指示框內', faceGuideHelp: '使用一隻手指拖曳照片位置；使用兩隻手指縮放。請將眼睛與下巴對齊指示框。',
+    closeFaceEditor: '關閉臉部調整視窗', eyes: '眼睛', gestureHint: '單指：移動 · 雙指：縮放', zoom: '縮放', horizontal: '水平位置', vertical: '垂直位置', resetAlignment: '重設對齊', useFit: '使用此位置',
+    timeUp: '時間到', opponentKO: '對手 KO', youAreDown: '你被擊倒', hit: '次命中', hitsLower: '次命中', counter: '反擊', hitUpper: '命中',
+    timedResult: (count) => `鐘聲響起前，你一共命中 ${count} 次。`,
+    winResult: '你在回合結束前擊倒了對手。', loseResult: '對手以 KO 擊倒了你。',
+    statusUpload: '上傳對手照片並調整位置，然後按 A / D 或 Enter 開始。',
+    statusTimedReady: (time) => `限時模式準備完成：${time}。按任一出拳鍵開始。`,
+    statusClassicReady: '經典模式準備完成。按 A / D、← / →、Enter 或空白鍵開始。',
+    statusTimeUp: (count) => `時間到 · 共命中 ${count} 次。按任一出拳鍵再次挑戰。`,
+    statusKO: 'KO。按任一出拳鍵即可立即再戰。', statusDown: '你被擊倒了。按任一出拳鍵即可立即再戰。',
+    statusTimedFight: (time, count) => `剩餘 ${time} · 已命中 ${count} 次 · 在鐘聲響起前繼續出拳。`,
+    statusClassicFight: '戰鬥中：按 A / D 或 ← / → 出拳，對手也會反擊。',
+  },
+};
+
+
 const BRUISE_PALETTES = [
   'radial-gradient(ellipse at 50% 45%, rgba(61,18,94,.92) 0%, rgba(119,35,74,.72) 42%, rgba(181,61,48,.28) 68%, transparent 82%)',
   'radial-gradient(ellipse at 46% 48%, rgba(37,22,92,.9) 0%, rgba(90,38,112,.74) 40%, rgba(159,49,61,.3) 69%, transparent 83%)',
@@ -34,14 +86,14 @@ function generateRandomBruises(count = 12) {
   }).sort((a, b) => a.threshold - b.threshold);
 }
 
-function HealthBar({ label, value, align = 'left' }) {
+function HealthBar({ label, value, align = 'left', hpLabel = 'HP' }) {
   const pct = clamp(value, 0, 100);
   const bar = pct > 55 ? 'bg-emerald-500' : pct > 25 ? 'bg-amber-500' : 'bg-red-500';
   return (
     <div className={`w-full ${align === 'right' ? 'text-right' : 'text-left'}`}>
       <div className="mb-1.5 flex items-end justify-between gap-4 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
         <span>{label}</span>
-        <span className="tabular-nums">{pct} HP</span>
+        <span className="tabular-nums">{pct} {hpLabel}</span>
       </div>
       <div className="h-2.5 overflow-hidden rounded-full bg-black/10 ring-1 ring-black/5 dark:bg-white/10 dark:ring-white/10">
         <div className={`h-full rounded-full transition-[width] duration-300 ${bar}`} style={{ width: `${pct}%` }} />
@@ -76,12 +128,12 @@ function UploadIcon() {
   );
 }
 
-function FaceImage({ image, fit, className = '' }) {
+function FaceImage({ image, fit, className = '', alt = 'Uploaded opponent' }) {
   if (!image) return null;
   return (
     <img
       src={image}
-      alt="Uploaded opponent"
+      alt={alt}
       draggable="false"
       className={`absolute inset-0 h-full w-full select-none object-cover ${className}`}
       style={{ transform: `translate(${fit.x}%, ${fit.y}%) scale(${fit.zoom})`, transformOrigin: '50% 50%' }}
@@ -89,7 +141,7 @@ function FaceImage({ image, fit, className = '' }) {
   );
 }
 
-function FaceEditor({ image, fit, setFit, onClose }) {
+function FaceEditor({ image, fit, setFit, onClose, t }) {
   const previewRef = useRef(null);
   const pointersRef = useRef(new Map());
   const gestureRef = useRef(null);
@@ -244,11 +296,11 @@ function FaceEditor({ image, fit, setFit, onClose }) {
         <div className="glass my-auto w-full max-w-[760px] rounded-[26px] border border-white/20 bg-white/95 p-4 shadow-2xl dark:border-white/10 dark:bg-zinc-950/95 sm:rounded-[30px] sm:p-7">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-[.22em] text-zinc-500 dark:text-zinc-400 sm:text-[11px]">Face alignment</p>
-              <h2 className="mt-1 text-xl font-semibold tracking-[-.04em] sm:text-2xl">Fit the face inside the guide</h2>
-              <p className="mt-1.5 max-w-xl text-xs leading-5 text-zinc-600 dark:text-zinc-300 sm:mt-2 sm:text-sm sm:leading-6">Drag with one finger to reposition. Pinch with two fingers to zoom, then line up the eyes and chin with the guide.</p>
+              <p className="text-[10px] font-bold uppercase tracking-[.22em] text-zinc-500 dark:text-zinc-400 sm:text-[11px]">{t.faceAlignment}</p>
+              <h2 className="mt-1 text-xl font-semibold tracking-[-.04em] sm:text-2xl">{t.fitFaceGuide}</h2>
+              <p className="mt-1.5 max-w-xl text-xs leading-5 text-zinc-600 dark:text-zinc-300 sm:mt-2 sm:text-sm sm:leading-6">{t.faceGuideHelp}</p>
             </div>
-            <button type="button" onClick={onClose} aria-label="Close face editor" className="grid h-10 w-10 shrink-0 touch-manipulation place-items-center rounded-full bg-black/[.06] text-xl active:scale-95 dark:bg-white/10">×</button>
+            <button type="button" onClick={onClose} aria-label={t.closeFaceEditor} className="grid h-10 w-10 shrink-0 touch-manipulation place-items-center rounded-full bg-black/[.06] text-xl active:scale-95 dark:bg-white/10">×</button>
           </div>
 
           <div className="mt-4 grid gap-4 sm:mt-5 sm:gap-5 md:grid-cols-[minmax(0,1fr)_250px]">
@@ -263,33 +315,33 @@ function FaceEditor({ image, fit, setFit, onClose }) {
                 className="relative mx-auto aspect-[4/5] w-[min(78vw,320px)] touch-none cursor-grab overflow-hidden rounded-[24px] bg-zinc-200 shadow-inner active:cursor-grabbing dark:bg-zinc-800 sm:w-full sm:max-w-[360px] sm:rounded-[28px]"
                 style={{ touchAction: 'none', WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none' }}
               >
-                <FaceImage image={image} fit={fit} />
+                <FaceImage image={image} fit={fit} alt={t.uploadedOpponent} />
                 <div className="pointer-events-none absolute inset-[9%_13%_8%] rounded-[46%_46%_48%_48%/38%_38%_58%_58%] border-2 border-dashed border-white/90 shadow-[0_0_0_999px_rgba(0,0,0,.28)]" />
                 <div className="pointer-events-none absolute left-[26%] right-[26%] top-[39%] border-t border-white/80" />
                 <div className="pointer-events-none absolute bottom-[18%] left-1/2 top-[13%] border-l border-white/45" />
-                <div className="pointer-events-none absolute left-1/2 top-[39%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/[.55] px-2 py-1 text-[10px] font-bold uppercase tracking-[.16em] text-white">Eyes</div>
+                <div className="pointer-events-none absolute left-1/2 top-[39%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/[.55] px-2 py-1 text-[10px] font-bold uppercase tracking-[.16em] text-white">{t.eyes}</div>
               </div>
-              <p className="mt-2 text-center text-[11px] font-medium text-zinc-500 dark:text-zinc-400">1 finger: move · 2 fingers: pinch to zoom</p>
+              <p className="mt-2 text-center text-[11px] font-medium text-zinc-500 dark:text-zinc-400">{t.gestureHint}</p>
             </div>
 
             <div className="flex min-w-0 flex-col justify-between gap-4 sm:gap-5">
               <div className="space-y-4 sm:space-y-5">
                 <label className="block text-sm font-semibold">
-                  Zoom <span className="float-right tabular-nums text-zinc-500">{fit.zoom.toFixed(2)}×</span>
+                  {t.zoom} <span className="float-right tabular-nums text-zinc-500">{fit.zoom.toFixed(2)}×</span>
                   <input className="mt-2 h-8 w-full touch-manipulation accent-blue-600" type="range" min="1" max="2.1" step="0.01" value={fit.zoom} onChange={(e) => applyFit({ ...fitRef.current, zoom: Number(e.target.value) })} />
                 </label>
                 <label className="block text-sm font-semibold">
-                  Horizontal <span className="float-right tabular-nums text-zinc-500">{Math.round(fit.x)}</span>
+                  {t.horizontal} <span className="float-right tabular-nums text-zinc-500">{Math.round(fit.x)}</span>
                   <input className="mt-2 h-8 w-full touch-manipulation accent-blue-600" type="range" min="-40" max="40" step="1" value={fit.x} onChange={(e) => applyFit({ ...fitRef.current, x: Number(e.target.value) })} />
                 </label>
                 <label className="block text-sm font-semibold">
-                  Vertical <span className="float-right tabular-nums text-zinc-500">{Math.round(fit.y)}</span>
+                  {t.vertical} <span className="float-right tabular-nums text-zinc-500">{Math.round(fit.y)}</span>
                   <input className="mt-2 h-8 w-full touch-manipulation accent-blue-600" type="range" min="-40" max="40" step="1" value={fit.y} onChange={(e) => applyFit({ ...fitRef.current, y: Number(e.target.value) })} />
                 </label>
-                <button type="button" onClick={() => applyFit(DEFAULT_FACE_FIT)} className="w-full touch-manipulation rounded-2xl border border-black/10 px-4 py-3 text-sm font-semibold active:scale-[.99] hover:bg-black/[.04] dark:border-white/15 dark:hover:bg-white/10">Reset alignment</button>
+                <button type="button" onClick={() => applyFit(DEFAULT_FACE_FIT)} className="w-full touch-manipulation rounded-2xl border border-black/10 px-4 py-3 text-sm font-semibold active:scale-[.99] hover:bg-black/[.04] dark:border-white/15 dark:hover:bg-white/10">{t.resetAlignment}</button>
               </div>
               <div className="sticky bottom-0 -mx-1 bg-gradient-to-t from-white via-white/95 to-transparent px-1 pb-1 pt-3 dark:from-zinc-950 dark:via-zinc-950/95 md:static md:m-0 md:bg-none md:p-0">
-                <button type="button" onClick={onClose} className="w-full touch-manipulation rounded-2xl bg-blue-600 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 active:scale-[.99] hover:bg-blue-500">Use this fit</button>
+                <button type="button" onClick={onClose} className="w-full touch-manipulation rounded-2xl bg-blue-600 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 active:scale-[.99] hover:bg-blue-500">{t.useFit}</button>
               </div>
             </div>
           </div>
@@ -413,7 +465,7 @@ function FaceDamage({ damage, bruises = [] }) {
   );
 }
 
-function Opponent({ image, fit, hp, damageOverride = null, hitKey, attack, bruises }) {
+function Opponent({ image, fit, hp, damageOverride = null, hitKey, attack, bruises, t }) {
   const damage = damageOverride == null ? 100 - hp : clamp(damageOverride, 0, 100);
   const faceDamage = clamp((damage - 38) / 50, 0, 1);
   const leftAttacking = attack?.side === 'left';
@@ -436,11 +488,11 @@ function Opponent({ image, fit, hp, damageOverride = null, hitKey, attack, bruis
         style={{ filter: `saturate(${1 - faceDamage * 0.14}) contrast(${1 + faceDamage * 0.1})` }}
       >
         {image ? (
-          <FaceImage image={image} fit={fit} />
+          <FaceImage image={image} fit={fit} alt={t.uploadedOpponent} />
         ) : (
           <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-zinc-200 to-zinc-400 px-5 text-center text-zinc-600 dark:from-zinc-700 dark:to-zinc-900 dark:text-zinc-300">
             <div className="mb-4 text-5xl">🥊</div>
-            <p className="text-sm font-semibold">Upload a face to enter the ring</p>
+            <p className="text-sm font-semibold">{t.uploadFaceRing}</p>
           </div>
         )}
         {image && <FaceDamage damage={damage} bruises={bruises} />}
@@ -478,6 +530,8 @@ export default function App() {
     if (saved) return saved === 'dark';
     return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
   });
+  const [language, setLanguage] = useState(() => localStorage.getItem('ff-language') === 'zh-Hant' ? 'zhHant' : 'en');
+  const t = TRANSLATIONS[language];
   const [opponentImage, setOpponentImage] = useState('');
   const [faceFit, setFaceFit] = useState(DEFAULT_FACE_FIT);
   const [faceEditorOpen, setFaceEditorOpen] = useState(false);
@@ -504,18 +558,18 @@ export default function App() {
   const classicOver = gameMode === 'classic' && (opponentHp <= 0 || playerHp <= 0);
   const isOver = classicOver || timedOut;
   const result = gameMode === 'timed'
-    ? (timedOut ? 'Time up' : null)
+    ? (timedOut ? t.timeUp : null)
     : opponentHp <= 0
-      ? 'Opponent KO'
+      ? t.opponentKO
       : playerHp <= 0
-        ? 'You are down'
+        ? t.youAreDown
         : null;
   const resultDetail = gameMode === 'timed' && timedOut
-    ? `You landed ${timedHits} ${timedHits === 1 ? 'hit' : 'hits'} before the bell.`
+    ? t.timedResult(timedHits)
     : opponentHp <= 0
-      ? 'You beat the opponent before the round ended.'
+      ? t.winResult
       : playerHp <= 0
-        ? 'The opponent scored the KO.'
+        ? t.loseResult
         : '';
 
   const playImpact = useCallback(() => {
@@ -573,7 +627,7 @@ export default function App() {
     if (gameMode === 'timed') {
       setTimedHits((hits) => hits + 1);
       setTimedVisualDamage((current) => clamp(current + 4 + Math.random() * 4.5, 0, 100));
-      setDamageText({ value: 'HIT', id: eventId });
+      setDamageText({ value: t.hitUpper, id: eventId });
     } else {
       setDamageText({ value: damage, id: eventId });
       setOpponentHp((hp) => clamp(hp - damage, 0, 100));
@@ -582,7 +636,7 @@ export default function App() {
     playImpact();
     window.setTimeout(() => setPunchSide(null), 350);
     window.setTimeout(() => setDamageText(null), 720);
-  }, [opponentImage, punchSide, playImpact, gameMode]);
+  }, [opponentImage, punchSide, playImpact, gameMode, t]);
 
   const requestPunch = useCallback((side) => {
     if (!opponentImage || faceEditorOpen) return;
@@ -609,22 +663,29 @@ export default function App() {
   }, [timeLimit]);
 
   const status = useMemo(() => {
-    if (!opponentImage) return 'Upload a face, adjust the fit, then press A / D or Enter.';
+    if (!opponentImage) return t.statusUpload;
     if (!roundStarted) return gameMode === 'timed'
-      ? `Time Limit ready: ${formatTime(timeLimit)}. Press a fight key to start.`
-      : 'Classic mode ready. Press A / D, ← / →, Enter, or Space to start.';
-    if (timedOut) return `Time up · ${timedHits} ${timedHits === 1 ? 'hit' : 'hits'}. Press any fight key to go again.`;
-    if (gameMode === 'classic' && opponentHp <= 0) return 'KO. Press any fight key to rematch instantly.';
-    if (gameMode === 'classic' && playerHp <= 0) return 'You are down. Press any fight key to rematch instantly.';
+      ? t.statusTimedReady(formatTime(timeLimit))
+      : t.statusClassicReady;
+    if (timedOut) return t.statusTimeUp(timedHits);
+    if (gameMode === 'classic' && opponentHp <= 0) return t.statusKO;
+    if (gameMode === 'classic' && playerHp <= 0) return t.statusDown;
     return gameMode === 'timed'
-      ? `${formatTime(timeLeft)} remaining · ${timedHits} ${timedHits === 1 ? 'hit' : 'hits'} · keep punching until the bell.`
-      : 'Fight: A / D or ← / →. The opponent will punch back.';
-  }, [opponentImage, roundStarted, opponentHp, playerHp, gameMode, timeLimit, timeLeft, timedOut, timedHits]);
+      ? t.statusTimedFight(formatTime(timeLeft), timedHits)
+      : t.statusClassicFight;
+  }, [opponentImage, roundStarted, opponentHp, playerHp, gameMode, timeLimit, timeLeft, timedOut, timedHits, t]);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark);
     localStorage.setItem('ff-theme', dark ? 'dark' : 'light');
   }, [dark]);
+
+
+  useEffect(() => {
+    const htmlLang = language === 'zhHant' ? 'zh-Hant' : 'en';
+    document.documentElement.lang = htmlLang;
+    localStorage.setItem('ff-language', htmlLang);
+  }, [language]);
 
   useEffect(() => {
     const onKey = (event) => {
@@ -671,7 +732,7 @@ export default function App() {
             setPlayerHp((hp) => clamp(hp - incoming, 0, 100));
             setIncomingDamageText({ value: incoming, id: attackId });
           } else {
-            setIncomingDamageText({ value: 'COUNTER', id: attackId });
+            setIncomingDamageText({ value: t.counter, id: attackId });
           }
           setPlayerHit(true);
           playImpact();
@@ -691,7 +752,7 @@ export default function App() {
       setPlayerHit(false);
       setIncomingDamageText(null);
     };
-  }, [roundStarted, isOver, playImpact, gameMode]);
+  }, [roundStarted, isOver, playImpact, gameMode, t]);
 
   const onUpload = (event) => {
     const file = event.target.files?.[0];
@@ -709,56 +770,65 @@ export default function App() {
 
   return (
     <main className="min-h-screen bg-[#f5f5f7] text-zinc-950 transition-colors dark:bg-[#050505] dark:text-white">
-      {faceEditorOpen && opponentImage && <FaceEditor image={opponentImage} fit={faceFit} setFit={setFaceFit} onClose={() => setFaceEditorOpen(false)} />}
+      {faceEditorOpen && opponentImage && <FaceEditor image={opponentImage} fit={faceFit} setFit={setFaceFit} onClose={() => setFaceEditorOpen(false)} t={t} />}
 
       <div className="mx-auto flex min-h-screen max-w-[1600px] flex-col p-3 sm:p-5 lg:p-6">
         <header className="glass relative z-50 flex items-center justify-between rounded-[24px] border border-black/5 bg-white/75 px-4 py-3 shadow-apple dark:border-white/10 dark:bg-zinc-900/70 sm:px-5">
           <div>
-            <div className="text-[11px] font-bold uppercase tracking-[.24em] text-zinc-500 dark:text-zinc-400">Stress release mini game</div>
+            <div className="text-[11px] font-bold uppercase tracking-[.24em] text-zinc-500 dark:text-zinc-400">{t.stressRelease}</div>
             <h1 className="mt-0.5 text-xl font-semibold tracking-[-.03em] sm:text-2xl">Face Fighter</h1>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => setSoundOn((v) => !v)} className="hidden rounded-full border border-black/5 bg-black/[.04] px-3 py-2 text-xs font-semibold text-zinc-700 transition hover:bg-black/[.07] dark:border-white/10 dark:bg-white/10 dark:text-zinc-200 dark:hover:bg-white/15 sm:block">Sound {soundOn ? 'On' : 'Off'}</button>
-            <button onClick={() => setDark((v) => !v)} aria-label="Toggle theme" className="grid h-10 w-10 place-items-center rounded-full border border-black/5 bg-black/[.04] text-zinc-700 transition hover:scale-[1.03] hover:bg-black/[.07] dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/15">{dark ? <SunIcon /> : <MoonIcon />}</button>
+            <button
+              type="button"
+              onClick={() => setLanguage((current) => current === 'en' ? 'zhHant' : 'en')}
+              aria-label={t.switchLanguage}
+              title={t.switchLanguage}
+              className="rounded-full border border-black/5 bg-black/[.04] px-3 py-2 text-xs font-semibold text-zinc-700 transition hover:bg-black/[.07] dark:border-white/10 dark:bg-white/10 dark:text-zinc-200 dark:hover:bg-white/15"
+            >
+              {language === 'en' ? '繁中' : 'EN'}
+            </button>
+            <button onClick={() => setSoundOn((v) => !v)} className="hidden rounded-full border border-black/5 bg-black/[.04] px-3 py-2 text-xs font-semibold text-zinc-700 transition hover:bg-black/[.07] dark:border-white/10 dark:bg-white/10 dark:text-zinc-200 dark:hover:bg-white/15 sm:block">{t.sound} {soundOn ? t.on : t.off}</button>
+            <button onClick={() => setDark((v) => !v)} aria-label={t.toggleTheme} className="grid h-10 w-10 place-items-center rounded-full border border-black/5 bg-black/[.04] text-zinc-700 transition hover:scale-[1.03] hover:bg-black/[.07] dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/15">{dark ? <SunIcon /> : <MoonIcon />}</button>
           </div>
         </header>
 
         <section className="mt-3 grid min-h-0 flex-1 gap-3 lg:grid-cols-[330px_minmax(0,1fr)]">
           <aside className="glass order-2 rounded-[28px] border border-black/5 bg-white/75 p-5 shadow-apple dark:border-white/10 dark:bg-zinc-900/70 lg:order-1">
-            <p className="text-[11px] font-bold uppercase tracking-[.22em] text-zinc-500 dark:text-zinc-400">Opponent</p>
-            <h2 className="mt-1 text-2xl font-semibold tracking-[-.04em]">Choose a face</h2>
-            <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-300">Upload a clear portrait, then align the eyes and chin with the face guide. The image stays in this browser session.</p>
+            <p className="text-[11px] font-bold uppercase tracking-[.22em] text-zinc-500 dark:text-zinc-400">{t.opponent}</p>
+            <h2 className="mt-1 text-2xl font-semibold tracking-[-.04em]">{t.chooseFace}</h2>
+            <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-300">{t.uploadHelp}</p>
 
             <label className="mt-5 flex cursor-pointer items-center justify-center gap-2 rounded-2xl bg-zinc-950 px-4 py-3 text-sm font-semibold text-white transition hover:scale-[1.01] active:scale-[.99] dark:bg-white dark:text-black">
               <UploadIcon />
-              {opponentImage ? 'Choose another photo' : 'Upload photo'}
+              {opponentImage ? t.chooseAnotherPhoto : t.uploadPhoto}
               <input type="file" accept="image/*" className="hidden" onChange={onUpload} />
             </label>
 
             {opponentImage && (
-              <button onClick={() => setFaceEditorOpen(true)} className="mt-2 w-full rounded-2xl border border-black/10 px-4 py-3 text-sm font-semibold transition hover:bg-black/[.04] dark:border-white/15 dark:hover:bg-white/10">Adjust face fit</button>
+              <button onClick={() => setFaceEditorOpen(true)} className="mt-2 w-full rounded-2xl border border-black/10 px-4 py-3 text-sm font-semibold transition hover:bg-black/[.04] dark:border-white/15 dark:hover:bg-white/10">{t.adjustFaceFit}</button>
             )}
 
             {gameMode === 'classic' ? (
               <div className="mt-6 space-y-5">
-                <HealthBar label="You" value={playerHp} />
-                <HealthBar label="Opponent" value={opponentHp} />
+                <HealthBar label={t.you} value={playerHp} hpLabel={t.hp} />
+                <HealthBar label={t.opponent} value={opponentHp} hpLabel={t.hp} />
               </div>
             ) : (
               <div className="mt-6 grid grid-cols-2 gap-3">
                 <div className="rounded-2xl border border-black/5 bg-black/[.03] p-4 dark:border-white/10 dark:bg-white/[.06]">
-                  <div className="text-[10px] font-bold uppercase tracking-[.18em] text-zinc-500 dark:text-zinc-400">Hits</div>
+                  <div className="text-[10px] font-bold uppercase tracking-[.18em] text-zinc-500 dark:text-zinc-400">{t.hits}</div>
                   <div className="mt-1 text-3xl font-bold tabular-nums tracking-[-.04em]">{timedHits}</div>
                 </div>
                 <div className="rounded-2xl border border-blue-500/15 bg-blue-500/[.08] p-4">
-                  <div className="text-[10px] font-bold uppercase tracking-[.18em] text-blue-600 dark:text-blue-300">Time</div>
+                  <div className="text-[10px] font-bold uppercase tracking-[.18em] text-blue-600 dark:text-blue-300">{t.time}</div>
                   <div className="mt-1 text-3xl font-bold tabular-nums tracking-[-.04em]">{formatTime(timeLeft)}</div>
                 </div>
               </div>
             )}
 
             <div className="mt-6 rounded-[22px] border border-black/5 bg-black/[.03] p-3 dark:border-white/10 dark:bg-white/[.06]">
-              <div className="text-xs font-bold uppercase tracking-[.16em] text-zinc-500 dark:text-zinc-400">Game mode</div>
+              <div className="text-xs font-bold uppercase tracking-[.16em] text-zinc-500 dark:text-zinc-400">{t.gameMode}</div>
               <div className="mt-3 grid grid-cols-2 gap-2 rounded-2xl bg-black/[.05] p-1 dark:bg-white/[.07]">
                 <button
                   type="button"
@@ -766,7 +836,7 @@ export default function App() {
                   disabled={roundStarted && !isOver}
                   className={`rounded-xl px-3 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${gameMode === 'classic' ? 'bg-white text-black shadow-sm dark:bg-white dark:text-black' : 'text-zinc-600 dark:text-zinc-300'}`}
                 >
-                  Classic
+                  {t.classic}
                 </button>
                 <button
                   type="button"
@@ -774,14 +844,14 @@ export default function App() {
                   disabled={roundStarted && !isOver}
                   className={`rounded-xl px-3 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${gameMode === 'timed' ? 'bg-white text-black shadow-sm dark:bg-white dark:text-black' : 'text-zinc-600 dark:text-zinc-300'}`}
                 >
-                  Time Limit
+                  {t.timeLimit}
                 </button>
               </div>
 
               {gameMode === 'timed' && (
                 <div className="mt-3">
                   <label className="flex items-center justify-between gap-3 text-sm font-semibold">
-                    Round time
+                    {t.roundTime}
                     <div className="flex items-center gap-2">
                       <input
                         type="number"
@@ -813,7 +883,7 @@ export default function App() {
                         }}
                         className="w-20 rounded-xl border border-black/10 bg-white px-2.5 py-2 text-right tabular-nums outline-none focus:ring-2 focus:ring-blue-500/40 disabled:opacity-50 dark:border-white/10 dark:bg-black/30"
                       />
-                      <span className="text-xs text-zinc-500">sec</span>
+                      <span className="text-xs text-zinc-500">{t.secondsShort}</span>
                     </div>
                   </label>
                   <div className="mt-2 grid grid-cols-3 gap-2">
@@ -825,23 +895,23 @@ export default function App() {
                         onClick={() => { setTimeLimit(seconds); setTimeLimitInput(String(seconds)); setTimeLeft(seconds); }}
                         className="rounded-xl border border-black/10 px-2 py-2 text-xs font-semibold transition hover:bg-black/[.04] disabled:opacity-40 dark:border-white/10 dark:hover:bg-white/[.07]"
                       >
-                        {seconds < 60 ? `${seconds}s` : `${seconds / 60}m`}
+                        {seconds < 60 ? `${seconds}${t.secondsUnit}` : `${seconds / 60}${t.minutesUnit}`}
                       </button>
                     ))}
                   </div>
-                  <p className="mt-2 text-xs leading-5 text-zinc-500 dark:text-zinc-400">Set 10–600 seconds. There are no health points or KO in this mode—land as many hits as you want before the bell.</p>
+                  <p className="mt-2 text-xs leading-5 text-zinc-500 dark:text-zinc-400">{t.timedHelp}</p>
                 </div>
               )}
             </div>
 
             <div className="mt-4 rounded-2xl border border-black/5 bg-black/[.03] p-4 dark:border-white/10 dark:bg-white/[.06]">
-              <div className="text-xs font-bold uppercase tracking-[.16em] text-zinc-500 dark:text-zinc-400">Controls</div>
-              <p className="mt-2 text-sm leading-6 text-zinc-700 dark:text-zinc-300">A / D or ← / → punch. Enter or Space starts a round. Time Limit mode has no HP or KO—keep hitting until the timer reaches zero. Any fight key starts an instant rematch.</p>
+              <div className="text-xs font-bold uppercase tracking-[.16em] text-zinc-500 dark:text-zinc-400">{t.controls}</div>
+              <p className="mt-2 text-sm leading-6 text-zinc-700 dark:text-zinc-300">{t.controlsHelp}</p>
             </div>
 
             <div className="mt-5 flex gap-2">
-              <button onClick={startRound} disabled={!opponentImage || (roundStarted && !isOver)} className="flex-1 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-40">{isOver ? 'Fight again' : roundStarted ? 'Round active' : 'Start round'}</button>
-              <button onClick={resetToReady} className="rounded-2xl border border-black/10 px-4 py-3 text-sm font-semibold transition hover:bg-black/[.04] dark:border-white/15 dark:hover:bg-white/10">Reset</button>
+              <button onClick={startRound} disabled={!opponentImage || (roundStarted && !isOver)} className="flex-1 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-40">{isOver ? t.fightAgain : roundStarted ? t.roundActive : t.startRound}</button>
+              <button onClick={resetToReady} className="rounded-2xl border border-black/10 px-4 py-3 text-sm font-semibold transition hover:bg-black/[.04] dark:border-white/15 dark:hover:bg-white/10">{t.reset}</button>
             </div>
           </aside>
 
@@ -850,22 +920,22 @@ export default function App() {
               {gameMode === 'timed' ? (
                 <div className="glass mx-auto grid max-w-3xl grid-cols-2 items-center gap-3 rounded-[22px] border border-white/20 bg-white/60 p-3 shadow-lg dark:border-white/10 dark:bg-black/[.35] sm:gap-5 sm:p-4">
                   <div className="rounded-2xl border border-black/5 bg-white/70 px-4 py-2.5 dark:border-white/10 dark:bg-white/10">
-                    <div className="text-[9px] font-bold uppercase tracking-[.18em] text-zinc-500 dark:text-zinc-400">Hits landed</div>
+                    <div className="text-[9px] font-bold uppercase tracking-[.18em] text-zinc-500 dark:text-zinc-400">{t.hitsLanded}</div>
                     <div className="mt-0.5 text-2xl font-bold tabular-nums sm:text-3xl">{timedHits}</div>
                   </div>
                   <div className="rounded-2xl border border-blue-500/25 bg-blue-600 px-4 py-2.5 text-right text-white shadow-sm">
-                    <div className="text-[9px] font-bold uppercase tracking-[.18em] text-white/75">Time left</div>
+                    <div className="text-[9px] font-bold uppercase tracking-[.18em] text-white/75">{t.timeLeft}</div>
                     <div className="mt-0.5 text-2xl font-bold tabular-nums sm:text-3xl">{formatTime(timeLeft)}</div>
                   </div>
                 </div>
               ) : (
                 <div className="glass mx-auto grid max-w-5xl grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2 rounded-[22px] border border-white/20 bg-white/60 p-3 shadow-lg dark:border-white/10 dark:bg-black/[.35] sm:gap-5 sm:p-4">
-                  <HealthBar label="Player" value={playerHp} />
+                  <HealthBar label={t.player} value={playerHp} hpLabel={t.hp} />
                   <div className="min-w-[58px] rounded-xl border border-black/5 bg-white/70 px-2 py-1.5 text-center text-zinc-700 shadow-sm dark:border-white/10 dark:bg-white/10 dark:text-white sm:min-w-[78px] sm:px-3 sm:py-2">
-                    <div className="text-[8px] font-bold uppercase tracking-[.16em] opacity-75 sm:text-[9px]">Mode</div>
+                    <div className="text-[8px] font-bold uppercase tracking-[.16em] opacity-75 sm:text-[9px]">{t.mode}</div>
                     <div className="mt-0.5 text-sm font-bold sm:text-lg">∞</div>
                   </div>
-                  <HealthBar label="Opponent" value={opponentHp} align="right" />
+                  <HealthBar label={t.opponent} value={opponentHp} align="right" hpLabel={t.hp} />
                 </div>
               )}
             </div>
@@ -876,8 +946,8 @@ export default function App() {
               <div className="arena-spotlight arena-spotlight-right" />
               <div className="arena-scoreboard">
                 <span>FACE FIGHTER</span>
-                <span>{gameMode === 'timed' ? `HITS ${timedHits} · ${formatTime(timeLeft)}` : 'NO LIMIT'}</span>
-                <span className="scoreboard-live">LIVE</span>
+                <span>{gameMode === 'timed' ? `${t.hits.toUpperCase()} ${timedHits} · ${formatTime(timeLeft)}` : t.noLimit}</span>
+                <span className="scoreboard-live">{t.live}</span>
               </div>
               <div className="arena-crowd">
                 {Array.from({ length: 54 }).map((_, index) => (
@@ -903,31 +973,31 @@ export default function App() {
               <div className="ring-rope ring-rope-4" />
               <div className="ring-canvas">
                 <div className="canvas-center-mark">FF</div>
-                <div className="canvas-sponsor canvas-sponsor-left">CHAMPIONSHIP</div>
+                <div className="canvas-sponsor canvas-sponsor-left">{t.championship}</div>
                 <div className="canvas-sponsor canvas-sponsor-right">FACE FIGHTER</div>
               </div>
-              <div className="ring-apron"><span>FACE FIGHTER · MAIN EVENT</span></div>
+              <div className="ring-apron"><span>FACE FIGHTER · {t.mainEvent}</span></div>
             </div>
 
             <div className="absolute inset-0 flex items-center justify-center pt-20 sm:pt-24">
-              <Opponent image={opponentImage} fit={faceFit} hp={opponentHp} damageOverride={gameMode === 'timed' ? timedVisualDamage : null} hitKey={hitKey} attack={opponentAttack} bruises={roundBruises} />
+              <Opponent image={opponentImage} fit={faceFit} hp={opponentHp} damageOverride={gameMode === 'timed' ? timedVisualDamage : null} hitKey={hitKey} attack={opponentAttack} bruises={roundBruises} t={t} />
             </div>
 
             {damageText && <div key={damageText.id} className="damage-pop pointer-events-none absolute left-1/2 top-[35%] z-50 -translate-x-1/2 rounded-full bg-black/75 px-3 py-1.5 text-lg font-bold text-white shadow-xl">{gameMode === 'timed' ? damageText.value : `-${damageText.value}`}</div>}
-            {incomingDamageText && <div key={incomingDamageText.id} className="incoming-damage-pop pointer-events-none absolute left-1/2 top-[17%] z-[90] -translate-x-1/2 rounded-full bg-red-600/90 px-3 py-1.5 text-lg font-bold text-white shadow-xl">{gameMode === 'timed' ? incomingDamageText.value : `-${incomingDamageText.value} HP`}</div>}
+            {incomingDamageText && <div key={incomingDamageText.id} className="incoming-damage-pop pointer-events-none absolute left-1/2 top-[17%] z-[90] -translate-x-1/2 rounded-full bg-red-600/90 px-3 py-1.5 text-lg font-bold text-white shadow-xl">{gameMode === 'timed' ? incomingDamageText.value : `-${incomingDamageText.value} ${t.hp}`}</div>}
             {playerHit && <div className="hit-vignette pointer-events-none absolute inset-0 z-[85]" />}
 
             {result && (
               <div className="glass pointer-events-none absolute left-1/2 top-1/2 z-[60] w-[min(88%,450px)] -translate-x-1/2 -translate-y-1/2 rounded-[28px] border border-white/20 bg-white/[.88] p-6 text-center shadow-2xl dark:border-white/10 dark:bg-zinc-950/[.88]">
-                <div className="text-xs font-bold uppercase tracking-[.24em] text-zinc-500 dark:text-zinc-400">Round complete</div>
+                <div className="text-xs font-bold uppercase tracking-[.24em] text-zinc-500 dark:text-zinc-400">{t.roundComplete}</div>
                 <div className="mt-2 text-4xl font-bold tracking-[-.05em]">{result}</div>
                 {resultDetail && <div className="mt-2 text-sm font-medium text-zinc-700 dark:text-zinc-200">{resultDetail}</div>}
-                <div className="mt-3 text-sm text-zinc-600 dark:text-zinc-300">A / D · ← / → to rematch and punch immediately<br />Enter / Space to restart</div>
+                <div className="mt-3 text-sm text-zinc-600 dark:text-zinc-300">{t.restartHint1}<br />{t.restartHint2}</div>
               </div>
             )}
 
-            <button aria-label="Left punch" onClick={() => requestPunch('left')} className="absolute inset-y-0 left-0 z-30 w-1/2 cursor-crosshair bg-transparent" />
-            <button aria-label="Right punch" onClick={() => requestPunch('right')} className="absolute inset-y-0 right-0 z-30 w-1/2 cursor-crosshair bg-transparent" />
+            <button aria-label={t.leftPunch} onClick={() => requestPunch('left')} className="absolute inset-y-0 left-0 z-30 w-1/2 cursor-crosshair bg-transparent" />
+            <button aria-label={t.rightPunch} onClick={() => requestPunch('right')} className="absolute inset-y-0 right-0 z-30 w-1/2 cursor-crosshair bg-transparent" />
 
             <PlayerGlove side="left" active={punchSide === 'left'} />
             <PlayerGlove side="right" active={punchSide === 'right'} />
