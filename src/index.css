@@ -1,0 +1,223 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+button,
+input,
+label {
+  font: inherit;
+}
+
+@keyframes opponent-bob {
+  0%, 100% { transform: translateY(0) rotate(-.2deg); }
+  50% { transform: translateY(-7px) rotate(.2deg); }
+}
+
+@keyframes hit-shake {
+  0% { transform: translateX(0) rotate(0deg); }
+  25% { transform: translateX(-10px) rotate(-2deg); }
+  50% { transform: translateX(12px) rotate(2deg); }
+  75% { transform: translateX(-5px) rotate(-1deg); }
+  100% { transform: translateX(0) rotate(0deg); }
+}
+
+@keyframes left-punch {
+  0%, 100% { transform: translate3d(0,0,0) rotate(18deg); }
+  45% { transform: translate3d(30vw,-24vh,0) rotate(-14deg) scale(1.06); }
+}
+
+@keyframes right-punch {
+  0%, 100% { transform: translate3d(0,0,0) rotate(-18deg); }
+  45% { transform: translate3d(-30vw,-24vh,0) rotate(14deg) scale(1.06); }
+}
+
+@keyframes damage-pop {
+  0% { opacity: 0; transform: translateY(8px) scale(.7); }
+  25% { opacity: 1; transform: translateY(0) scale(1.05); }
+  100% { opacity: 0; transform: translateY(-34px) scale(1); }
+}
+
+.opponent-idle {
+  animation: opponent-bob 2.7s ease-in-out infinite;
+}
+
+.opponent-hit {
+  animation: hit-shake .28s ease-out;
+}
+
+.left-punch {
+  animation: left-punch .34s cubic-bezier(.2,.8,.2,1);
+}
+
+.right-punch {
+  animation: right-punch .34s cubic-bezier(.2,.8,.2,1);
+}
+
+.damage-pop {
+  animation: damage-pop .7s ease-out forwards;
+}
+
+.glass {
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+}
+
+@keyframes opponent-left-punch {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); filter: blur(0); }
+  24% { transform: translate3d(18px, -10px, 0) rotate(10deg) scale(.94); }
+  62% { transform: translate3d(-88px, 118px, 0) rotate(-12deg) scale(2.65); filter: blur(.3px); }
+  78% { transform: translate3d(-94px, 126px, 0) rotate(-14deg) scale(2.78); filter: blur(1px); }
+  100% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); filter: blur(0); }
+}
+
+@keyframes opponent-right-punch {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); filter: blur(0); }
+  24% { transform: translate3d(-18px, -10px, 0) rotate(-10deg) scale(.94); }
+  62% { transform: translate3d(88px, 118px, 0) rotate(12deg) scale(2.65); filter: blur(.3px); }
+  78% { transform: translate3d(94px, 126px, 0) rotate(14deg) scale(2.78); filter: blur(1px); }
+  100% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); filter: blur(0); }
+}
+
+@keyframes opponent-attack-body {
+  0%, 100% { transform: translateY(0) scale(1); }
+  24% { transform: translateY(4px) scale(.985); }
+  62% { transform: translateY(15px) scale(1.035); }
+}
+
+@keyframes player-hit-screen {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  18% { transform: translate3d(-9px, 5px, 0) rotate(-.35deg); }
+  42% { transform: translate3d(11px, -4px, 0) rotate(.4deg); }
+  68% { transform: translate3d(-5px, 2px, 0) rotate(-.18deg); }
+}
+
+@keyframes hit-vignette {
+  0% { opacity: 0; }
+  20% { opacity: .9; }
+  100% { opacity: 0; }
+}
+
+@keyframes incoming-damage-pop {
+  0% { opacity: 0; transform: translate(-50%, -8px) scale(.72); }
+  25% { opacity: 1; transform: translate(-50%, 0) scale(1.08); }
+  100% { opacity: 0; transform: translate(-50%, 24px) scale(.96); }
+}
+
+.opponent-arm {
+  will-change: transform, filter;
+}
+
+.opponent-left-punch {
+  z-index: 80;
+  animation: opponent-left-punch .72s cubic-bezier(.17,.84,.3,1);
+}
+
+.opponent-right-punch {
+  z-index: 80;
+  animation: opponent-right-punch .72s cubic-bezier(.17,.84,.3,1);
+}
+
+.opponent-attack-body {
+  animation: opponent-attack-body .72s ease-in-out;
+}
+
+.player-hit-screen {
+  animation: player-hit-screen .3s ease-out;
+}
+
+.hit-vignette {
+  background:
+    radial-gradient(circle at center, transparent 42%, rgba(127, 29, 29, .18) 68%, rgba(127, 29, 29, .7) 100%),
+    rgba(239, 68, 68, .08);
+  animation: hit-vignette .38s ease-out forwards;
+}
+
+.incoming-damage-pop {
+  animation: incoming-damage-pop .62s ease-out forwards;
+}
+
+@media (max-width: 640px) {
+  @keyframes opponent-left-punch {
+    0% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+    24% { transform: translate3d(12px, -8px, 0) rotate(9deg) scale(.94); }
+    68% { transform: translate3d(-44px, 92px, 0) rotate(-10deg) scale(2.25); }
+    100% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+  }
+
+  @keyframes opponent-right-punch {
+    0% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+    24% { transform: translate3d(-12px, -8px, 0) rotate(-9deg) scale(.94); }
+    68% { transform: translate3d(44px, 92px, 0) rotate(10deg) scale(2.25); }
+    100% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+  }
+}
+
+@keyframes camera-glove-left {
+  0% { opacity: 0; transform: translate3d(-110px, 20px, 0) rotate(16deg) scale(.28); filter: blur(0); }
+  18% { opacity: 1; transform: translate3d(-85px, 5px, 0) rotate(10deg) scale(.45); }
+  64% { opacity: 1; transform: translate3d(28px, 150px, 0) rotate(-12deg) scale(2.25); filter: blur(.6px); }
+  78% { opacity: .95; transform: translate3d(42px, 165px, 0) rotate(-16deg) scale(2.55); filter: blur(1.4px); }
+  100% { opacity: 0; transform: translate3d(56px, 172px, 0) rotate(-18deg) scale(2.7); filter: blur(2px); }
+}
+
+@keyframes camera-glove-right {
+  0% { opacity: 0; transform: translate3d(110px, 20px, 0) rotate(-16deg) scale(.28); filter: blur(0); }
+  18% { opacity: 1; transform: translate3d(85px, 5px, 0) rotate(-10deg) scale(.45); }
+  64% { opacity: 1; transform: translate3d(-28px, 150px, 0) rotate(12deg) scale(2.25); filter: blur(.6px); }
+  78% { opacity: .95; transform: translate3d(-42px, 165px, 0) rotate(16deg) scale(2.55); filter: blur(1.4px); }
+  100% { opacity: 0; transform: translate3d(-56px, 172px, 0) rotate(18deg) scale(2.7); filter: blur(2px); }
+}
+
+.opponent-camera-glove {
+  pointer-events: none;
+  position: absolute;
+  top: 42%;
+  z-index: 110;
+  height: 92px;
+  width: 82px;
+  will-change: transform, opacity, filter;
+}
+
+.camera-glove-left {
+  left: 16%;
+  animation: camera-glove-left .9s cubic-bezier(.12,.78,.24,1) forwards;
+}
+
+.camera-glove-right {
+  right: 16%;
+  animation: camera-glove-right .9s cubic-bezier(.12,.78,.24,1) forwards;
+}
+
+@media (max-width: 640px) {
+  .opponent-camera-glove {
+    top: 44%;
+    height: 76px;
+    width: 68px;
+  }
+}

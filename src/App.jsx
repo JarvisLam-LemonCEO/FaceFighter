@@ -1,0 +1,480 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
+const DEFAULT_FACE_FIT = { x: 0, y: -5, zoom: 1.08 };
+
+function HealthBar({ label, value, align = 'left' }) {
+  const pct = clamp(value, 0, 100);
+  const bar = pct > 55 ? 'bg-emerald-500' : pct > 25 ? 'bg-amber-500' : 'bg-red-500';
+  return (
+    <div className={`w-full ${align === 'right' ? 'text-right' : 'text-left'}`}>
+      <div className="mb-1.5 flex items-end justify-between gap-4 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
+        <span>{label}</span>
+        <span className="tabular-nums">{pct} HP</span>
+      </div>
+      <div className="h-2.5 overflow-hidden rounded-full bg-black/10 ring-1 ring-black/5 dark:bg-white/10 dark:ring-white/10">
+        <div className={`h-full rounded-full transition-[width] duration-300 ${bar}`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M20.4 14.4A8 8 0 0 1 9.6 3.6 8.5 8.5 0 1 0 20.4 14.4Z" />
+    </svg>
+  );
+}
+
+function SunIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <circle cx="12" cy="12" r="3.5" />
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+    </svg>
+  );
+}
+
+function UploadIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M12 16V4m0 0-4 4m4-4 4 4" />
+      <path d="M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" />
+    </svg>
+  );
+}
+
+function FaceImage({ image, fit, className = '' }) {
+  if (!image) return null;
+  return (
+    <img
+      src={image}
+      alt="Uploaded opponent"
+      draggable="false"
+      className={`absolute inset-0 h-full w-full select-none object-cover ${className}`}
+      style={{ transform: `translate(${fit.x}%, ${fit.y}%) scale(${fit.zoom})`, transformOrigin: '50% 50%' }}
+    />
+  );
+}
+
+function FaceEditor({ image, fit, setFit, onClose }) {
+  const dragRef = useRef(null);
+  const previewRef = useRef(null);
+
+  const onPointerDown = (event) => {
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    dragRef.current = { x: event.clientX, y: event.clientY, fitX: fit.x, fitY: fit.y };
+  };
+
+  const onPointerMove = (event) => {
+    if (!dragRef.current || !previewRef.current) return;
+    const rect = previewRef.current.getBoundingClientRect();
+    const dx = ((event.clientX - dragRef.current.x) / rect.width) * 100;
+    const dy = ((event.clientY - dragRef.current.y) / rect.height) * 100;
+    setFit((current) => ({
+      ...current,
+      x: clamp(dragRef.current.fitX + dx, -40, 40),
+      y: clamp(dragRef.current.fitY + dy, -40, 40),
+    }));
+  };
+
+  const endDrag = () => {
+    dragRef.current = null;
+  };
+
+  return (
+    <div className="fixed inset-0 z-[120] grid place-items-center bg-black/[.55] p-3 backdrop-blur-md sm:p-6">
+      <div className="glass w-full max-w-[760px] rounded-[30px] border border-white/20 bg-white/95 p-5 shadow-2xl dark:border-white/10 dark:bg-zinc-950/95 sm:p-7">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[.22em] text-zinc-500 dark:text-zinc-400">Face alignment</p>
+            <h2 className="mt-1 text-2xl font-semibold tracking-[-.04em]">Fit the face inside the guide</h2>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-zinc-600 dark:text-zinc-300">Drag the photo to reposition it. Use zoom and position controls so the eyes and chin fit the indicator.</p>
+          </div>
+          <button onClick={onClose} className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-black/[.06] text-xl dark:bg-white/10">×</button>
+        </div>
+
+        <div className="mt-5 grid gap-5 md:grid-cols-[minmax(0,1fr)_250px]">
+          <div
+            ref={previewRef}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={endDrag}
+            onPointerCancel={endDrag}
+            className="relative mx-auto aspect-[4/5] w-full max-w-[360px] touch-none cursor-grab overflow-hidden rounded-[28px] bg-zinc-200 shadow-inner active:cursor-grabbing dark:bg-zinc-800"
+          >
+            <FaceImage image={image} fit={fit} />
+            <div className="pointer-events-none absolute inset-[9%_13%_8%] rounded-[46%_46%_48%_48%/38%_38%_58%_58%] border-2 border-dashed border-white/90 shadow-[0_0_0_999px_rgba(0,0,0,.28)]" />
+            <div className="pointer-events-none absolute left-[26%] right-[26%] top-[39%] border-t border-white/80" />
+            <div className="pointer-events-none absolute bottom-[18%] left-1/2 top-[13%] border-l border-white/45" />
+            <div className="pointer-events-none absolute left-1/2 top-[39%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/[.55] px-2 py-1 text-[10px] font-bold uppercase tracking-[.16em] text-white">Eyes</div>
+          </div>
+
+          <div className="flex flex-col justify-between gap-5">
+            <div className="space-y-5">
+              <label className="block text-sm font-semibold">
+                Zoom <span className="float-right tabular-nums text-zinc-500">{fit.zoom.toFixed(2)}×</span>
+                <input className="mt-2 w-full accent-blue-600" type="range" min="1" max="2.1" step="0.01" value={fit.zoom} onChange={(e) => setFit((f) => ({ ...f, zoom: Number(e.target.value) }))} />
+              </label>
+              <label className="block text-sm font-semibold">
+                Horizontal <span className="float-right tabular-nums text-zinc-500">{Math.round(fit.x)}</span>
+                <input className="mt-2 w-full accent-blue-600" type="range" min="-40" max="40" step="1" value={fit.x} onChange={(e) => setFit((f) => ({ ...f, x: Number(e.target.value) }))} />
+              </label>
+              <label className="block text-sm font-semibold">
+                Vertical <span className="float-right tabular-nums text-zinc-500">{Math.round(fit.y)}</span>
+                <input className="mt-2 w-full accent-blue-600" type="range" min="-40" max="40" step="1" value={fit.y} onChange={(e) => setFit((f) => ({ ...f, y: Number(e.target.value) }))} />
+              </label>
+              <button onClick={() => setFit(DEFAULT_FACE_FIT)} className="w-full rounded-2xl border border-black/10 px-4 py-3 text-sm font-semibold hover:bg-black/[.04] dark:border-white/15 dark:hover:bg-white/10">Reset alignment</button>
+            </div>
+            <button onClick={onClose} className="w-full rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-500">Use this fit</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Opponent({ image, fit, hp, hitKey, attack }) {
+  const damage = 100 - hp;
+  const bruiseOpacity = clamp((damage - 2) / 38, 0, 0.98);
+  const heavyBruiseOpacity = clamp((damage - 12) / 38, 0, 1);
+  const eyeSwelling = clamp((damage - 4) / 48, 0, 1);
+  const severeSwelling = clamp((damage - 28) / 42, 0, 1);
+  const faceDamage = clamp((damage - 40) / 45, 0, 1);
+  const extremeDamage = clamp((damage - 68) / 28, 0, 1);
+  const leftAttacking = attack?.side === 'left';
+  const rightAttacking = attack?.side === 'right';
+
+  return (
+    <div
+      key={`opponent-${hitKey}`}
+      className={`relative z-20 mx-auto flex h-[46vh] min-h-[300px] max-h-[560px] w-[min(72vw,410px)] flex-col items-center justify-end ${hitKey ? 'opponent-hit' : 'opponent-idle'} ${attack ? 'opponent-attack-body' : ''}`}
+    >
+      {attack && (
+        <div key={attack.id} className={`opponent-camera-glove ${attack.side === 'left' ? 'camera-glove-left' : 'camera-glove-right'}`}>
+          <div className="h-full w-full rounded-[46%_46%_42%_42%] bg-gradient-to-br from-red-500 to-red-800 shadow-[0_25px_70px_rgba(0,0,0,.45)] ring-2 ring-black/20" />
+          <div className="absolute bottom-[-18%] left-1/2 h-[38%] w-[58%] -translate-x-1/2 rounded-b-[28px] bg-zinc-950" />
+        </div>
+      )}
+
+      <div
+        className="relative z-20 mb-[-10px] h-[210px] w-[178px] overflow-hidden rounded-[42%_42%_46%_46%/36%_36%_58%_58%] border border-white/40 bg-zinc-300 shadow-2xl dark:border-white/10 dark:bg-zinc-700 sm:h-[240px] sm:w-[200px]"
+        style={{ filter: `saturate(${1 - faceDamage * 0.2}) contrast(${1 + faceDamage * 0.11})` }}
+      >
+        {image ? (
+          <FaceImage image={image} fit={fit} />
+        ) : (
+          <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-zinc-200 to-zinc-400 px-5 text-center text-zinc-600 dark:from-zinc-700 dark:to-zinc-900 dark:text-zinc-300">
+            <div className="mb-4 text-5xl">🥊</div>
+            <p className="text-sm font-semibold">Upload a face to enter the ring</p>
+          </div>
+        )}
+
+        <div className="pointer-events-none absolute left-[3%] top-[42%] h-[38%] w-[47%] rounded-full mix-blend-multiply blur-[1.2px]" style={{ opacity: bruiseOpacity, transform: `scale(${1 + severeSwelling * 0.28})`, background: 'radial-gradient(circle at 56% 42%, rgba(35,12,74,.98) 0%, rgba(76,29,149,.88) 25%, rgba(127,29,29,.72) 50%, rgba(153,27,27,.3) 69%, transparent 80%)' }} />
+        <div className="pointer-events-none absolute right-[2%] top-[25%] h-[40%] w-[49%] rounded-full mix-blend-multiply blur-[1.2px]" style={{ opacity: heavyBruiseOpacity, transform: `scale(${1 + severeSwelling * 0.32})`, background: 'radial-gradient(circle at 45% 55%, rgba(35,12,74,.98), rgba(88,28,135,.9) 31%, rgba(153,27,27,.68) 58%, transparent 79%)' }} />
+        <div className="pointer-events-none absolute left-[24%] top-[4%] h-[28%] w-[48%] rounded-full mix-blend-multiply blur-[2px]" style={{ opacity: clamp((damage - 22) / 50, 0, 0.78), background: 'radial-gradient(ellipse, rgba(76,29,149,.85), rgba(127,29,29,.5) 54%, transparent 76%)' }} />
+
+        <div className="pointer-events-none absolute left-[10%] top-[29%] h-[22%] w-[36%] rounded-[50%] mix-blend-multiply blur-[1.8px]" style={{ opacity: 0.18 + eyeSwelling * 0.78, background: 'radial-gradient(ellipse, rgba(45,10,68,.98), rgba(127,29,29,.78) 54%, transparent 76%)' }} />
+        <div className="pointer-events-none absolute right-[9%] top-[29%] h-[22%] w-[36%] rounded-[50%] mix-blend-multiply blur-[1.8px]" style={{ opacity: heavyBruiseOpacity * 0.95, background: 'radial-gradient(ellipse, rgba(45,10,68,.98), rgba(127,29,29,.78) 54%, transparent 76%)' }} />
+
+        <div className="pointer-events-none absolute left-[12%] top-[31%] h-[12%] w-[34%] rounded-[50%] bg-red-950/90 shadow-[0_8px_16px_rgba(55,5,20,.65)] blur-[1.2px]" style={{ opacity: eyeSwelling * 0.94, transform: `scaleY(${1 + eyeSwelling * 3.2}) scaleX(${1 + severeSwelling * 0.26})` }} />
+        <div className="pointer-events-none absolute right-[11%] top-[31%] h-[12%] w-[34%] rounded-[50%] bg-red-950/90 shadow-[0_8px_16px_rgba(55,5,20,.65)] blur-[1.2px]" style={{ opacity: eyeSwelling * 0.94, transform: `scaleY(${1 + eyeSwelling * 3.2}) scaleX(${1 + severeSwelling * 0.26})` }} />
+
+        <div className="pointer-events-none absolute left-[16%] top-[36%] h-[4%] w-[25%] rounded-full bg-black/85 blur-[.5px]" style={{ opacity: severeSwelling * 0.88, transform: `scaleY(${1 + extremeDamage * 1.6})` }} />
+        <div className="pointer-events-none absolute right-[15%] top-[36%] h-[4%] w-[25%] rounded-full bg-black/85 blur-[.5px]" style={{ opacity: severeSwelling * 0.88, transform: `scaleY(${1 + extremeDamage * 1.6})` }} />
+
+        <div className="pointer-events-none absolute left-1/2 top-[39%] h-[28%] w-[21%] -translate-x-1/2 rounded-full mix-blend-multiply blur-[1.5px]" style={{ opacity: clamp((damage - 18) / 55, 0, 0.78), background: 'radial-gradient(ellipse, rgba(76,29,149,.84), rgba(153,27,27,.48) 61%, transparent 80%)' }} />
+        <div className="pointer-events-none absolute bottom-[3%] left-[19%] h-[29%] w-[64%] rounded-full mix-blend-multiply blur-[2px]" style={{ opacity: faceDamage * 0.74, background: 'radial-gradient(ellipse, rgba(127,29,29,.72), rgba(88,28,135,.52) 54%, transparent 77%)' }} />
+        <div className="pointer-events-none absolute bottom-[13%] left-[31%] h-[10%] w-[39%] rounded-full bg-red-950/80 blur-[1px]" style={{ opacity: clamp((damage - 34) / 48, 0, 0.9), transform: `scaleY(${1 + faceDamage * 1.25}) scaleX(${1 + extremeDamage * 0.25})` }} />
+        <div className="pointer-events-none absolute inset-0 rounded-[inherit] mix-blend-multiply" style={{ opacity: faceDamage * 0.28, background: 'radial-gradient(circle at 50% 52%, transparent 20%, rgba(127,29,29,.58) 100%)' }} />
+      </div>
+
+      <div className="relative z-10 h-[180px] w-[260px] rounded-t-[48%] bg-gradient-to-b from-zinc-900 to-black shadow-2xl sm:w-[300px]">
+        <div className={`opponent-arm opponent-arm-left absolute left-[-29px] top-7 h-28 w-24 origin-bottom-right ${leftAttacking ? 'opponent-left-punch' : ''}`}>
+          <div className="absolute bottom-0 right-2 h-20 w-12 rotate-[22deg] rounded-full bg-zinc-900" />
+          <div className="absolute left-0 top-0 h-24 w-20 rotate-[16deg] rounded-[45%] bg-gradient-to-br from-red-500 to-red-700 shadow-lg ring-1 ring-black/20" />
+        </div>
+        <div className={`opponent-arm opponent-arm-right absolute right-[-29px] top-7 h-28 w-24 origin-bottom-left ${rightAttacking ? 'opponent-right-punch' : ''}`}>
+          <div className="absolute bottom-0 left-2 h-20 w-12 rotate-[-22deg] rounded-full bg-zinc-900" />
+          <div className="absolute right-0 top-0 h-24 w-20 rotate-[-16deg] rounded-[45%] bg-gradient-to-bl from-red-500 to-red-700 shadow-lg ring-1 ring-black/20" />
+        </div>
+        <div className="absolute left-1/2 top-8 -translate-x-1/2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[10px] font-bold tracking-[.26em] text-white/80">FACE FIGHTER</div>
+      </div>
+    </div>
+  );
+}
+
+function PlayerGlove({ side, active }) {
+  const isLeft = side === 'left';
+  return (
+    <div className={`pointer-events-none absolute bottom-[-22px] z-40 h-[155px] w-[122px] sm:h-[190px] sm:w-[148px] ${isLeft ? 'left-[-18px] sm:left-[4%]' : 'right-[-18px] sm:right-[4%]'} ${active ? (isLeft ? 'left-punch' : 'right-punch') : ''}`} style={{ transform: isLeft ? 'rotate(18deg)' : 'rotate(-18deg)' }}>
+      <div className="absolute bottom-0 left-1/2 h-[88%] w-[78%] -translate-x-1/2 rounded-[44%_44%_32%_32%/48%_48%_28%_28%] bg-gradient-to-b from-red-500 to-red-700 shadow-[0_25px_55px_rgba(0,0,0,.28)] ring-1 ring-black/10" />
+      <div className={`absolute top-[13%] h-[52%] w-[58%] rounded-full bg-red-600 ${isLeft ? 'right-[-2%]' : 'left-[-2%]'}`} />
+      <div className="absolute bottom-[1%] left-1/2 h-[30%] w-[58%] -translate-x-1/2 rounded-b-[28px] bg-zinc-950/90" />
+    </div>
+  );
+}
+
+export default function App() {
+  const [dark, setDark] = useState(() => {
+    const saved = localStorage.getItem('ff-theme');
+    if (saved) return saved === 'dark';
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
+  });
+  const [opponentImage, setOpponentImage] = useState('');
+  const [faceFit, setFaceFit] = useState(DEFAULT_FACE_FIT);
+  const [faceEditorOpen, setFaceEditorOpen] = useState(false);
+  const [opponentHp, setOpponentHp] = useState(100);
+  const [playerHp, setPlayerHp] = useState(100);
+  const [punchSide, setPunchSide] = useState(null);
+  const [hitKey, setHitKey] = useState(0);
+  const [damageText, setDamageText] = useState(null);
+  const [incomingDamageText, setIncomingDamageText] = useState(null);
+  const [opponentAttack, setOpponentAttack] = useState(null);
+  const [playerHit, setPlayerHit] = useState(false);
+  const [roundStarted, setRoundStarted] = useState(false);
+  const [soundOn, setSoundOn] = useState(false);
+  const audioRef = useRef(null);
+
+  const isOver = opponentHp <= 0 || playerHp <= 0;
+  const result = opponentHp <= 0 ? 'Opponent KO' : playerHp <= 0 ? 'You are down' : null;
+
+  const playImpact = useCallback(() => {
+    if (!soundOn) return;
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      const ctx = audioRef.current || new AudioCtx();
+      audioRef.current = ctx;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(95, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(48, ctx.currentTime + 0.08);
+      gain.gain.setValueAtTime(0.11, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.11);
+    } catch {
+      // Optional audio only.
+    }
+  }, [soundOn]);
+
+  const startRound = useCallback(() => {
+    if (!opponentImage) return;
+    setOpponentHp(100);
+    setPlayerHp(100);
+    setPunchSide(null);
+    setDamageText(null);
+    setIncomingDamageText(null);
+    setOpponentAttack(null);
+    setPlayerHit(false);
+    setRoundStarted(true);
+  }, [opponentImage]);
+
+  const performPunch = useCallback((side) => {
+    if (!opponentImage || punchSide) return;
+    const damage = Math.floor(7 + Math.random() * 10);
+    setPunchSide(side);
+    setHitKey((n) => n + 1);
+    setDamageText({ value: damage, id: Date.now() });
+    setOpponentHp((hp) => clamp(hp - damage, 0, 100));
+    playImpact();
+    window.setTimeout(() => setPunchSide(null), 350);
+    window.setTimeout(() => setDamageText(null), 720);
+  }, [opponentImage, punchSide, playImpact]);
+
+  const requestPunch = useCallback((side) => {
+    if (!opponentImage || faceEditorOpen) return;
+    if (!roundStarted || isOver) {
+      startRound();
+      window.setTimeout(() => performPunch(side), 80);
+      return;
+    }
+    performPunch(side);
+  }, [opponentImage, faceEditorOpen, roundStarted, isOver, startRound, performPunch]);
+
+  const resetToReady = useCallback(() => {
+    setOpponentHp(100);
+    setPlayerHp(100);
+    setPunchSide(null);
+    setDamageText(null);
+    setIncomingDamageText(null);
+    setOpponentAttack(null);
+    setPlayerHit(false);
+    setRoundStarted(false);
+  }, []);
+
+  const status = useMemo(() => {
+    if (!opponentImage) return 'Upload a face, adjust the fit, then press A / D or Enter.';
+    if (!roundStarted) return 'Ready. Press A / D, ← / →, Enter, or Space to start.';
+    if (opponentHp <= 0) return 'KO. Press any fight key to rematch instantly.';
+    if (playerHp <= 0) return 'You are down. Press any fight key to rematch instantly.';
+    return 'Fight: A / D or ← / →. The opponent will punch back.';
+  }, [opponentImage, roundStarted, opponentHp, playerHp]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', dark);
+    localStorage.setItem('ff-theme', dark ? 'dark' : 'light');
+  }, [dark]);
+
+  useEffect(() => {
+    const onKey = (event) => {
+      if (faceEditorOpen) return;
+      const key = event.key.toLowerCase();
+      if (key === 'a' || key === 'arrowleft') {
+        event.preventDefault();
+        requestPunch('left');
+      }
+      if (key === 'd' || key === 'arrowright') {
+        event.preventDefault();
+        requestPunch('right');
+      }
+      if ((key === 'enter' || key === ' ') && opponentImage) {
+        event.preventDefault();
+        if (!roundStarted || isOver) startRound();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [faceEditorOpen, requestPunch, opponentImage, roundStarted, isOver, startRound]);
+
+  useEffect(() => {
+    if (!roundStarted || isOver) return undefined;
+
+    const pending = [];
+    const timer = window.setInterval(() => {
+      if (Math.random() > 0.26) {
+        const incoming = Math.floor(5 + Math.random() * 9);
+        const side = Math.random() > 0.5 ? 'left' : 'right';
+        const attackId = Date.now();
+        setOpponentAttack({ side, id: attackId });
+
+        pending.push(window.setTimeout(() => {
+          setPlayerHp((hp) => clamp(hp - incoming, 0, 100));
+          setIncomingDamageText({ value: incoming, id: attackId });
+          setPlayerHit(true);
+          playImpact();
+        }, 420));
+        pending.push(window.setTimeout(() => {
+          setPlayerHit(false);
+          setIncomingDamageText(null);
+        }, 790));
+        pending.push(window.setTimeout(() => setOpponentAttack(null), 900));
+      }
+    }, 1500);
+
+    return () => {
+      clearInterval(timer);
+      pending.forEach((id) => clearTimeout(id));
+      setOpponentAttack(null);
+      setPlayerHit(false);
+      setIncomingDamageText(null);
+    };
+  }, [roundStarted, isOver, playImpact]);
+
+  const onUpload = (event) => {
+    const file = event.target.files?.[0];
+    if (!file || !file.type.startsWith('image/')) return;
+    const url = URL.createObjectURL(file);
+    setOpponentImage((old) => {
+      if (old?.startsWith('blob:')) URL.revokeObjectURL(old);
+      return url;
+    });
+    setFaceFit(DEFAULT_FACE_FIT);
+    resetToReady();
+    setFaceEditorOpen(true);
+    event.target.value = '';
+  };
+
+  return (
+    <main className="min-h-screen bg-[#f5f5f7] text-zinc-950 transition-colors dark:bg-[#050505] dark:text-white">
+      {faceEditorOpen && opponentImage && <FaceEditor image={opponentImage} fit={faceFit} setFit={setFaceFit} onClose={() => setFaceEditorOpen(false)} />}
+
+      <div className="mx-auto flex min-h-screen max-w-[1600px] flex-col p-3 sm:p-5 lg:p-6">
+        <header className="glass relative z-50 flex items-center justify-between rounded-[24px] border border-black/5 bg-white/75 px-4 py-3 shadow-apple dark:border-white/10 dark:bg-zinc-900/70 sm:px-5">
+          <div>
+            <div className="text-[11px] font-bold uppercase tracking-[.24em] text-zinc-500 dark:text-zinc-400">Stress release mini game</div>
+            <h1 className="mt-0.5 text-xl font-semibold tracking-[-.03em] sm:text-2xl">Face Fighter</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setSoundOn((v) => !v)} className="hidden rounded-full border border-black/5 bg-black/[.04] px-3 py-2 text-xs font-semibold text-zinc-700 transition hover:bg-black/[.07] dark:border-white/10 dark:bg-white/10 dark:text-zinc-200 dark:hover:bg-white/15 sm:block">Sound {soundOn ? 'On' : 'Off'}</button>
+            <button onClick={() => setDark((v) => !v)} aria-label="Toggle theme" className="grid h-10 w-10 place-items-center rounded-full border border-black/5 bg-black/[.04] text-zinc-700 transition hover:scale-[1.03] hover:bg-black/[.07] dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/15">{dark ? <SunIcon /> : <MoonIcon />}</button>
+          </div>
+        </header>
+
+        <section className="mt-3 grid min-h-0 flex-1 gap-3 lg:grid-cols-[330px_minmax(0,1fr)]">
+          <aside className="glass order-2 rounded-[28px] border border-black/5 bg-white/75 p-5 shadow-apple dark:border-white/10 dark:bg-zinc-900/70 lg:order-1">
+            <p className="text-[11px] font-bold uppercase tracking-[.22em] text-zinc-500 dark:text-zinc-400">Opponent</p>
+            <h2 className="mt-1 text-2xl font-semibold tracking-[-.04em]">Choose a face</h2>
+            <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-300">Upload a clear portrait, then align the eyes and chin with the face guide. The image stays in this browser session.</p>
+
+            <label className="mt-5 flex cursor-pointer items-center justify-center gap-2 rounded-2xl bg-zinc-950 px-4 py-3 text-sm font-semibold text-white transition hover:scale-[1.01] active:scale-[.99] dark:bg-white dark:text-black">
+              <UploadIcon />
+              {opponentImage ? 'Choose another photo' : 'Upload photo'}
+              <input type="file" accept="image/*" className="hidden" onChange={onUpload} />
+            </label>
+
+            {opponentImage && (
+              <button onClick={() => setFaceEditorOpen(true)} className="mt-2 w-full rounded-2xl border border-black/10 px-4 py-3 text-sm font-semibold transition hover:bg-black/[.04] dark:border-white/15 dark:hover:bg-white/10">Adjust face fit</button>
+            )}
+
+            <div className="mt-6 space-y-5">
+              <HealthBar label="You" value={playerHp} />
+              <HealthBar label="Opponent" value={opponentHp} />
+            </div>
+
+            <div className="mt-6 rounded-2xl border border-black/5 bg-black/[.03] p-4 dark:border-white/10 dark:bg-white/[.06]">
+              <div className="text-xs font-bold uppercase tracking-[.16em] text-zinc-500 dark:text-zinc-400">Controls</div>
+              <p className="mt-2 text-sm leading-6 text-zinc-700 dark:text-zinc-300">A / D or ← / → punch. Enter or Space starts a round. After a KO, press any fight key for an instant rematch.</p>
+            </div>
+
+            <div className="mt-5 flex gap-2">
+              <button onClick={startRound} disabled={!opponentImage || (roundStarted && !isOver)} className="flex-1 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-40">{isOver ? 'Fight again' : roundStarted ? 'Round active' : 'Start round'}</button>
+              <button onClick={resetToReady} className="rounded-2xl border border-black/10 px-4 py-3 text-sm font-semibold transition hover:bg-black/[.04] dark:border-white/15 dark:hover:bg-white/10">Reset</button>
+            </div>
+          </aside>
+
+          <div className={`relative order-1 min-h-[62vh] overflow-hidden rounded-[30px] border border-black/5 bg-gradient-to-b from-sky-100 via-zinc-100 to-zinc-300 shadow-apple dark:border-white/10 dark:from-zinc-800 dark:via-zinc-900 dark:to-black lg:order-2 lg:min-h-[690px] ${playerHit ? 'player-hit-screen' : ''}`}>
+            <div className="absolute inset-x-0 top-0 z-30 p-4 sm:p-5">
+              <div className="glass mx-auto grid max-w-5xl grid-cols-2 gap-5 rounded-[22px] border border-white/20 bg-white/60 p-3 shadow-lg dark:border-white/10 dark:bg-black/[.35] sm:p-4">
+                <HealthBar label="Player" value={playerHp} />
+                <HealthBar label="Opponent" value={opponentHp} align="right" />
+              </div>
+            </div>
+
+            <div className="pointer-events-none absolute left-1/2 top-[18%] h-28 w-[72%] -translate-x-1/2 rounded-[50%] bg-white/[.35] blur-3xl dark:bg-white/5" />
+            <div className="absolute inset-x-0 bottom-[24%] h-[2px] bg-red-600/80 shadow-[0_-62px_0_rgba(220,38,38,.75),0_-124px_0_rgba(220,38,38,.55)]" />
+            <div className="absolute inset-x-0 bottom-0 h-[29%] bg-[linear-gradient(100deg,rgba(255,255,255,.36),rgba(255,255,255,.08))] dark:bg-[linear-gradient(100deg,rgba(255,255,255,.08),rgba(255,255,255,.015))]" />
+            <div className="absolute bottom-0 left-1/2 h-[24%] w-[92%] -translate-x-1/2 [clip-path:polygon(8%_0,92%_0,100%_100%,0_100%)] border-t border-white/40 bg-white/25 dark:bg-white/[.04]" />
+
+            <div className="absolute inset-0 flex items-center justify-center pt-20 sm:pt-24">
+              <Opponent image={opponentImage} fit={faceFit} hp={opponentHp} hitKey={hitKey} attack={opponentAttack} />
+            </div>
+
+            {damageText && <div key={damageText.id} className="damage-pop pointer-events-none absolute left-1/2 top-[35%] z-50 -translate-x-1/2 rounded-full bg-black/75 px-3 py-1.5 text-lg font-bold text-white shadow-xl">-{damageText.value}</div>}
+            {incomingDamageText && <div key={incomingDamageText.id} className="incoming-damage-pop pointer-events-none absolute left-1/2 top-[17%] z-[90] -translate-x-1/2 rounded-full bg-red-600/90 px-3 py-1.5 text-lg font-bold text-white shadow-xl">-{incomingDamageText.value} HP</div>}
+            {playerHit && <div className="hit-vignette pointer-events-none absolute inset-0 z-[85]" />}
+
+            {result && (
+              <div className="glass pointer-events-none absolute left-1/2 top-1/2 z-[60] w-[min(88%,450px)] -translate-x-1/2 -translate-y-1/2 rounded-[28px] border border-white/20 bg-white/[.88] p-6 text-center shadow-2xl dark:border-white/10 dark:bg-zinc-950/[.88]">
+                <div className="text-xs font-bold uppercase tracking-[.24em] text-zinc-500 dark:text-zinc-400">Round complete</div>
+                <div className="mt-2 text-4xl font-bold tracking-[-.05em]">{result}</div>
+                <div className="mt-3 text-sm text-zinc-600 dark:text-zinc-300">A / D · ← / → to rematch and punch immediately<br />Enter / Space to restart</div>
+              </div>
+            )}
+
+            <button aria-label="Left punch" onClick={() => requestPunch('left')} className="absolute inset-y-0 left-0 z-30 w-1/2 cursor-crosshair bg-transparent" />
+            <button aria-label="Right punch" onClick={() => requestPunch('right')} className="absolute inset-y-0 right-0 z-30 w-1/2 cursor-crosshair bg-transparent" />
+
+            <PlayerGlove side="left" active={punchSide === 'left'} />
+            <PlayerGlove side="right" active={punchSide === 'right'} />
+
+            <div className="pointer-events-none absolute bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-full border border-white/20 bg-black/[.55] px-4 py-2 text-center text-[11px] font-semibold tracking-wide text-white/90 backdrop-blur-xl sm:bottom-5 sm:text-xs">{status}</div>
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+}
